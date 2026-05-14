@@ -6,7 +6,19 @@ category: tooling
 
 # Tool Usage by Task — Playbooks
 
-The overall server priority (`graph → code-metadata → Grep`) and the tool descriptors live in `AGENTS.md → Tooling`.
+The MCP server catalog, fallback order (`graph → code-metadata → grep=true retry → Grep` for project-source search), and per-server tool descriptors live in the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`, `docs/<server>.md`). `AGENTS.md` only defines the short obligation rules and points here.
+
+## Minimum Evidence Matrix
+
+Use the smallest set that closes the real context gaps. Do not promote a task to a heavier path just to satisfy a generic checklist.
+
+| Task shape | Required before edit | Required after edit |
+|---|---|---|
+| **Quick-fix BSL** (single procedure, no metadata / transaction / public API impact) | Read the target module / procedure and any directly referenced helper needed to understand the bug | `syntaxcheck` on the touched module |
+| **Full-cycle BSL** | `templatesearch` when a reusable pattern may exist; `search_code` / `codesearch` for local patterns; `get_object_dossier` / `metadatasearch` when metadata shape affects the code; platform / БСП / ITS docs only when versioned API or standard behaviour matters | `syntaxcheck` → `check_1c_code` → `review_1c_code`; impact analysis when public surface or metadata usage changed |
+| **Metadata XML / forms** | Similar object/form examples, metadata lookup, `get_xsd_schema`; prefer `1c-metadata-manage` over hand edits | `verify_xml`; metadata validation / form compilation where applicable |
+| **Integrations / platform APIs** | Existing integrations, templates, relevant БСП APIs, platform docs for exact API names / version availability, security requirements | `syntaxcheck` → `check_1c_code` → `review_1c_code`; ITS check when relying on an ITS standard |
+| **Markdown / rules / docs** | Read affected docs and referenced files needed for consistency | Structural checks only: paths, links, anchors, duplicate / conflicting wording |
 
 ## Writing New Code
 

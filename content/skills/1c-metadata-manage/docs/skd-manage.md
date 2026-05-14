@@ -390,6 +390,6 @@ powershell.exe -NoProfile -File skills/1c-metadata-manage/tools/1c-skd-validate/
 
 ## SDD Integration
 
-When creating or modifying DCS/SKD schemas as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating or modifying DCS/SKD schemas as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Add spec deltas describing report requirements, data sets, and expected output in `openspec/changes/`.

@@ -30,12 +30,12 @@ Extract existing patterns, conventions, and architectural decisions:
 - Find similar modifications to understand established approaches
 - Study metadata structure: catalogs, documents, registers, common modules, handlers, forms
 
-**Use MCP Tools:** See the **MCP Tools Reference** section in the project's `AGENTS.md` for descriptions. Follow the `powershell-windows` skill for shell commands.
+**Use MCP Tools:** See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for descriptions. Follow the `powershell-windows` skill for shell commands.
 
-**Development standards:** Follow `.ai-rules/rules/dev-standards-core.md` (project parameters, naming, documentation) and `.ai-rules/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
+**Development standards:** Follow `content/rules/dev-standards-core.md` (project parameters, naming, documentation) and `content/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
 Key tools: **codesearch**, **metadatasearch**, **get_metadata_details**, **graph_dependencies**, **get_method_call_hierarchy**, **templatesearch**
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ### 2. Gather Requirements
 
@@ -78,7 +78,7 @@ For each architectural decision, document:
 
 ### Common Modules
 
-Follow region structure from the `# Persona` section in `AGENTS.md` (ПрограммныйИнтерфейс, СлужебныйПрограммныйИнтерфейс, СлужебныеПроцедурыИФункции).
+Follow region structure from the `## Persona` section in `AGENTS.md` (ПрограммныйИнтерфейс, СлужебныйПрограммныйИнтерфейс, СлужебныеПроцедурыИФункции).
 
 ### Client-Server Architecture
 
@@ -195,6 +195,6 @@ Use appropriate diagram types:
 
 ## Red Flags (Anti-patterns)
 
-See `.ai-rules/rules/anti-patterns.md#architectural-anti-patterns` for anti-patterns to avoid.
+See `content/rules/anti-patterns.md → "Architectural Anti-Patterns"` for anti-patterns to avoid.
 
 Make confident architectural decisions instead of presenting multiple options. Be specific and practical — specify file paths, procedure and function names, concrete steps.

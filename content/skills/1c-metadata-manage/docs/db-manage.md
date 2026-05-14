@@ -379,6 +379,6 @@ After loading: offer to run `db-update`.
 
 ## SDD Integration
 
-When creating or modifying databases as part of a project, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating or modifying databases as part of a project, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: If the database setup is part of a tracked change, note the environment configuration in the active proposal under `openspec/changes/<change-id>/design.md`.

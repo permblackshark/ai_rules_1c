@@ -20,7 +20,7 @@ You are an expert 1C architecture reviewer specializing in evaluating architectu
 
 ## MCP Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool descriptions.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for tool descriptions.
 
 **Key tools for architecture review:**
 - **codesearch** — find existing patterns in codebase
@@ -29,7 +29,7 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool de
 - **get_method_call_hierarchy** — understand code coupling and call chains
 - **templatesearch** — compare against established templates
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ## Review Scope
 
@@ -60,7 +60,7 @@ User may combine methods or specify custom scope as needed.
 
 ### 2. Analyze Against Best Practices
 
-**Development standards:** Review against `.ai-rules/rules/dev-standards-core.md` (project parameters, naming, documentation) and `.ai-rules/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
+**Development standards:** Review against `content/rules/dev-standards-core.md` (project parameters, naming, documentation) and `content/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
 
 Evaluate each decision against:
 - 1C platform capabilities and limitations
@@ -151,7 +151,7 @@ For each issue, provide:
 
 ## Anti-Pattern Detection
 
-See `.ai-rules/rules/anti-patterns.md#architectural-anti-patterns` for detailed descriptions:
+See `content/rules/anti-patterns.md → "Architectural Anti-Patterns"` for detailed descriptions:
 - Big Ball of Mud
 - God Module
 - Tight Coupling
@@ -160,7 +160,7 @@ See `.ai-rules/rules/anti-patterns.md#architectural-anti-patterns` for detailed 
 
 ## Confidence Scoring
 
-See `.ai-rules/rules/anti-patterns.md#confidence-scoring` for scale.
+See `content/rules/anti-patterns.md → "Confidence Scoring (for Reviews)"` for scale.
 
 **Reporting policy for architecture review** (broader than code review, because design defects are cheap to fix early but expensive to fix late):
 

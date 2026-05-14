@@ -10,7 +10,23 @@ category: workflow
 
 ## Delegation principle
 
-12 specialized subagents are available in the project (full prompts in `content/agents/<name>.md`).
+13 specialized subagents are available in the project. Source prompt files live in `content/agents/` and use short file names without the `1c-` prefix:
+
+| Subagent id | Source prompt file |
+|---|---|
+| `1c-explorer` | `content/agents/explorer.md` |
+| `1c-analytic` | `content/agents/analytic.md` |
+| `1c-planner` | `content/agents/planner.md` |
+| `1c-architect` | `content/agents/architect.md` |
+| `1c-arch-reviewer` | `content/agents/arch-reviewer.md` |
+| `1c-developer` | `content/agents/developer.md` |
+| `1c-metadata-manager` | `content/agents/metadata-manager.md` |
+| `1c-refactoring` | `content/agents/refactoring.md` |
+| `1c-performance-optimizer` | `content/agents/performance-optimizer.md` |
+| `1c-error-fixer` | `content/agents/error-fixer.md` |
+| `1c-tester` | `content/agents/tester.md` |
+| `1c-code-reviewer` | `content/agents/code-reviewer.md` |
+| `1c-doc-writer` | `content/agents/doc-writer.md` |
 
 **Delegate when:**
 
@@ -24,6 +40,7 @@ category: workflow
 
 | Subagent | When to call | When NOT to call |
 |---|---|---|
+| **1c-explorer** | Read-only exploration across many files, metadata objects, dependencies, or "where/how/who calls" questions before planning, coding, or refactoring | Narrow lookup that the parent can answer with one direct read/search |
 | **1c-analytic** | User asks for a PRD, specification, or analysis of an existing area without writing code | Task is to write code |
 | **1c-planner** | A multi-step implementation or refactoring plan is needed before coding | Task is small enough that the plan is 1–2 lines |
 | **1c-architect** | Designing the architecture of a sizable modification (new subsystem, integration, multi-module change) | Single-procedure or single-module change |
@@ -32,7 +49,7 @@ category: workflow
 | **1c-metadata-manager** | Creating, scaffolding, compiling, or multi-step / multi-domain metadata operations (objects, forms, reports, layouts, roles, extensions) | Single info lookup or single XML attribute fix — use a direct edit or the `1c-metadata-manage` skill |
 | **1c-refactoring** | Dead-code cleanup, consolidation, or deduplication across multiple modules | Refactor is local to one procedure |
 | **1c-performance-optimizer** | User reports slowness, or query / loop optimization is the explicit task | No performance concern was raised |
-| **1c-error-fixer** | Quick fix of syntax / runtime errors / BSL LS warnings without architectural changes (cheap model — `haiku`) | The fix requires architectural rework — escalate to `1c-architect` / `1c-developer` |
+| **1c-error-fixer** | Quick fix of syntax / runtime errors / BSL LS warnings without architectural changes (routes to a lightweight model when the active tool supports model hints) | The fix requires architectural rework — escalate to `1c-architect` / `1c-developer` |
 | **1c-tester** | User asks to verify changes via deploy + UI automation against a test infobase | No test infobase available, or the task is purely static |
 | **1c-code-reviewer** | **Only when the user explicitly asks for a code review** | Auto-triggering after edits is forbidden |
 | **1c-doc-writer** | User-facing documentation: user guides, admin manuals, tutorials, codemaps, API references | Inline code documentation (module / procedure headers) — that is the developer's responsibility |

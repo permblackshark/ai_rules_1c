@@ -6,7 +6,7 @@ Edit and validate CommandInterface.xml files for 1C subsystems.
 
 ## 1. Edit — Modify CommandInterface.xml
 
-Operations: hide, show, place, order, subsystem-order, group-order. Full reference: [reference.md](skills/1c-metadata-manage/tools/1c-interface-manage/reference.md).
+Operations: hide, show, place, order, subsystem-order, group-order. Full reference: [reference.md](../tools/1c-interface-manage/reference.md).
 
 ```powershell
 powershell.exe -NoProfile -File skills/1c-metadata-manage/tools/1c-interface-manage/scripts/interface-edit.ps1 -CIPath '<path>' -Operation <op> -Value '<value>'

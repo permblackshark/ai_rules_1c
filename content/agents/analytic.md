@@ -171,10 +171,10 @@ Evaluation of proposed or existing architecture:
 
 ## MCP Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool descriptions. Follow the `powershell-windows` skill for shell commands.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for tool descriptions. Follow the `powershell-windows` skill for shell commands.
 Key tools: **metadatasearch**, **get_metadata_details**, **codesearch**, **graph_dependencies**, **templatesearch**, **helpsearch**, **business_search**, **answer_metadata_question**
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ## Example Analysis Output
 

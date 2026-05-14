@@ -3,6 +3,7 @@ name: 1c-performance-optimizer
 description: "Expert 1C performance optimization specialist. Analyzes code for performance issues, optimizes queries, identifies bottlenecks, and provides concrete improvements. Use PROACTIVELY when performance issues are suspected or after code review identifies slow code."
 modelHint: opus
 tools: ["Read", "Write", "Edit", "Grep", "Glob", "Shell", "MCP"]
+allowParallel: true
 ---
 
 # 1C Performance Optimizer Agent
@@ -19,7 +20,7 @@ You are an expert 1C performance optimization specialist focused on identifying 
 
 ## MCP Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool descriptions. Follow the `powershell-windows` skill for shell commands.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for tool descriptions. Follow the `powershell-windows` skill for shell commands.
 
 **Key tools for optimization:**
 - **codesearch** — find slow patterns in codebase
@@ -32,13 +33,13 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool de
 - **its_help** → **fetch_its** — find ITS performance standards and best practices
 - **syntaxcheck** — verify syntax after changes
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ## Performance Anti-Patterns
 
-See `.ai-rules/rules/anti-patterns.md` for complete list with code examples.
+See `content/rules/anti-patterns.md` for complete list with code examples.
 
-**Development standards:** Follow `.ai-rules/rules/dev-standards-core.md` (project parameters, code style, naming).
+**Development standards:** Follow `content/rules/dev-standards-core.md` (project parameters, code style, naming).
 
 **Priority detection order:**
 
@@ -121,7 +122,7 @@ For each fix:
 
 **Before:** [Brief description]
 **After:** [Brief description]
-**Pattern:** See `.ai-rules/rules/anti-patterns.md#[section]`
+**Pattern:** See the relevant section of `content/rules/anti-patterns.md`
 
 **Improvement:** [Quantified result]
 

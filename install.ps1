@@ -688,6 +688,16 @@ function New-McpConfig-Kilocode {
     return New-McpConfig-Cursor $Servers
 }
 
+function New-McpConfig-Other {
+    # Universal fallback adapter — uses the standard `mcpServers` JSON
+    # dictionary schema (same shape as Cursor / Claude Code / Kilo Code), so
+    # reuse the same renderer. The output is written to `.ai-agent/mcp.json`
+    # per `adapters/other.yaml` and is consumable by any AI client that
+    # supports the de-facto `mcpServers` JSON convention.
+    param([array]$Servers)
+    return New-McpConfig-Cursor $Servers
+}
+
 function New-McpConfig-OpenCode {
     param([array]$Servers)
     $mcp = [ordered]@{}
@@ -739,6 +749,7 @@ function New-McpConfig {
         'codex' { return (New-McpConfig-Codex $Servers) }
         'opencode' { return (New-McpConfig-OpenCode $Servers) }
         'kilocode' { return (New-McpConfig-Kilocode $Servers) }
+        'other' { return (New-McpConfig-Other $Servers) }
         default { throw "Unknown tool id: $ToolId" }
     }
 }
@@ -876,6 +887,29 @@ function Invoke-Detection {
     $list = @($ans -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     if ($list.Count -eq 0) { return $detectedArr }
     return $list
+}
+
+# Return the canonical primary directory for a tool — the leading top-level
+# segment of the first defined `<section>.copyTo` (rules → agents → commands
+# → skills). Used purely for human-readable progress messages so the user
+# sees the real install location (e.g. `.kilo` for Kilo Code, `.ai-agent`
+# for the universal `other` fallback) instead of a heuristic `.<tool-id>`
+# guess that is wrong for those two adapters.
+function Get-AdapterPrimaryDir {
+    param([System.Collections.IDictionary]$Adapter)
+    if (-not $Adapter) { return '' }
+    foreach ($section in @('rules', 'agents', 'commands', 'skills')) {
+        if (-not $Adapter.Contains($section)) { continue }
+        $copyTo = [string]$Adapter[$section].copyTo
+        if (-not $copyTo) { continue }
+        # Skip user-scope paths like `~/.codex/prompts/...` — they are not
+        # representative of the project-local install location.
+        if ($copyTo.StartsWith('~/') -or $copyTo.StartsWith('~\')) { continue }
+        $normalized = $copyTo.Replace('\', '/').TrimStart('/')
+        $firstSeg = ($normalized -split '/', 2)[0]
+        if ($firstSeg) { return $firstSeg }
+    }
+    return ''
 }
 
 function Get-AdapterTargetDirs {
@@ -1620,19 +1654,114 @@ function Resolve-CanonicalRulesLayout {
         [string[]]$ActiveTools,
         [hashtable]$Adapters
     )
-    foreach ($tool in $script:RulesDirPriority) {
-        if ($ActiveTools -notcontains $tool) { continue }
-        $adapter = $Adapters[$tool]
-        if (-not $adapter -or -not $adapter.Contains('rules')) { continue }
-        $copyTo = [string]$adapter.rules.copyTo
-        if (-not $copyTo) { continue }
-        $dir = $copyTo -replace '\{name\}.*$', ''
-        $dir = $dir.TrimEnd('/', '\')
-        $ext = ''
-        if ($copyTo -match '\{name\}\.([A-Za-z0-9]+)$') { $ext = $Matches[1] }
-        if ($dir) { return @{ Dir = $dir; Ext = $ext } }
+    $layouts = Resolve-CanonicalArtifactLayouts -ActiveTools $ActiveTools -Adapters $Adapters
+    if ($layouts -and $layouts.Contains('rules')) {
+        return @{ Dir = [string]$layouts['rules'].Dir; Ext = [string]$layouts['rules'].Ext }
     }
     return $null
+}
+
+# Compute the canonical installed location for every artefact section (rules,
+# agents, commands, skills) by walking the same priority order as
+# Resolve-CanonicalRulesLayout and picking, per section, the highest-priority
+# active tool whose adapter declares `<section>.copyTo`. Returns an ordered
+# hashtable `{ rules = @{Dir=..; Ext=..}; agents = ...; commands = ...; skills = ... }`.
+# Sections without a defined canonical layout are simply omitted.
+#
+# Used by Update-AgentsMd to rewrite `content/<section>/...` paths in the
+# source AGENTS.md to the per-section installed paths so the agent reading
+# AGENTS.md from the project root can resolve every link to an existing file.
+function Resolve-CanonicalArtifactLayouts {
+    param(
+        [string[]]$ActiveTools,
+        [hashtable]$Adapters
+    )
+    $layouts = [ordered]@{}
+    foreach ($section in @('rules', 'agents', 'commands', 'skills')) {
+        foreach ($tool in $script:RulesDirPriority) {
+            if ($ActiveTools -notcontains $tool) { continue }
+            $adapter = $Adapters[$tool]
+            if (-not $adapter -or -not $adapter.Contains($section)) { continue }
+            $copyTo = [string]$adapter[$section].copyTo
+            if (-not $copyTo) { continue }
+            $dir = $copyTo -replace '\{name\}.*$', ''
+            $dir = $dir.TrimEnd('/', '\')
+            if (-not $dir) { continue }
+            $ext = ''
+            if ($copyTo -match '\{name\}\.([A-Za-z0-9]+)$') { $ext = $Matches[1] }
+            $layouts[$section] = [ordered]@{ Dir = $dir; Ext = $ext; Tool = $tool }
+            break
+        }
+    }
+    return $layouts
+}
+
+# Rewrite source-repo paths (`content/<section>/<name>.md`,
+# `content/skills/<rest>`) to the per-section canonical installed paths. The
+# source AGENTS.md is maintained with readable repo-relative paths; the
+# installer substitutes them so that the file copied into the project root
+# points at files that actually exist on disk for the active tool(s).
+#
+# Substitutions performed (when the corresponding section layout is known):
+#   content/rules/<name>.md     -> <rulesDir>/<name>.<rulesExt>
+#   content/agents/<name>.md    -> <agentsDir>/<name>.<agentsExt>
+#   content/commands/<name>.md  -> <commandsDir>/<name>.<commandsExt>
+#   content/skills/<rest>       -> <skillsDir>/<rest>      (verbatim subpath)
+#
+# The name regex accepts `<` and `>` so placeholder paths like
+# `content/agents/<name>.md` in prose are also rewritten to the installed
+# directory but keep the literal `<name>` token.
+function Convert-AgentsMdPaths {
+    param(
+        [string]$Text,
+        [System.Collections.IDictionary]$Layouts
+    )
+    if ([string]::IsNullOrEmpty($Text)) { return $Text }
+    if ($null -eq $Layouts -or $Layouts.Count -eq 0) { return $Text }
+
+    $result = $Text
+    $sectionRegexes = @(
+        @{ Section = 'rules';    Pattern = 'content/rules/([\w\-<>]+)\.md' },
+        @{ Section = 'agents';   Pattern = 'content/agents/([\w\-<>]+)\.md' },
+        @{ Section = 'commands'; Pattern = 'content/commands/([\w\-<>]+)\.md' }
+    )
+    foreach ($entry in $sectionRegexes) {
+        $section = $entry.Section
+        if (-not $Layouts.Contains($section)) { continue }
+        $dir = [string]$Layouts[$section].Dir
+        if (-not $dir) { continue }
+        $ext = [string]$Layouts[$section].Ext
+        if (-not $ext) { $ext = 'md' }
+        # Closure capture for callback
+        $captureDir = $dir
+        $captureExt = $ext
+        # Pass 1: file references — both directory and extension are rewritten
+        # (the extension swap matters for Cursor's `.mdc` rules and Codex's
+        # `.toml` agents).
+        $result = [regex]::Replace($result, $entry.Pattern, {
+            param($m)
+            $name = $m.Groups[1].Value
+            return "$captureDir/$name.$captureExt"
+        })
+        # Pass 2: bare directory references like `content/rules/` (used in the
+        # source-language policy bullet, etc.). Substring replace is sufficient
+        # because pass 1 already consumed all preceding file references.
+        $result = $result.Replace("content/$section/", "$captureDir/")
+    }
+
+    if ($Layouts.Contains('skills')) {
+        $skillsDir = [string]$Layouts['skills'].Dir
+        if ($skillsDir) {
+            # Skills are copied verbatim — anything after `content/skills/`
+            # (SKILL.md, docs/<file>.md, tools/<…>) is preserved by the
+            # place phase, so a single prefix swap covers both file
+            # references (`content/skills/<name>/SKILL.md`) and bare
+            # directory references (`content/skills/`).
+            $result = $result.Replace('content/skills/', "$skillsDir/")
+        }
+    }
+
+    return $result
 }
 
 # ============================================================================
@@ -1668,13 +1797,21 @@ function Invoke-McpPhase {
 }
 
 # ============================================================================
-# SECTION 12: AGENTS.MD (STATIC COPY)
+# SECTION 12: AGENTS.MD (READABLE COPY + PATH REWRITER)
 # ============================================================================
 #
-# AGENTS.md is shipped as a fully static file in the source repository. The
-# installer only copies it into the project root and refreshes it on update
-# when the user has not modified it. No dynamic blocks, no @-imports injected
-# for foreign files or SDD integrations - the installer records those in the
+# AGENTS.md is shipped as a fully readable file in the source repository,
+# using repo-relative paths (`content/rules/<name>.md`, `content/agents/...`,
+# `content/skills/...`). The installer copies it into the project root and,
+# in the same step, rewrites every `content/<section>/...` path to the
+# per-section canonical installed path resolved from the active tool set
+# (see Resolve-CanonicalArtifactLayouts + Convert-AgentsMdPaths). The result
+# is that every path in the project-root AGENTS.md resolves to an existing
+# file for the active tool(s) — no broken links.
+#
+# Refresh on update is gated on `userModified` (manifest hash match), so user
+# edits are preserved. There are no dynamic blocks and no @-imports injected
+# for foreign files or SDD integrations — the installer records those in the
 # manifest (`foreignFiles`, `integrations`) for bookkeeping only, and the
 # shipped `AGENTS.md` documents how the user can link them manually.
 
@@ -1691,24 +1828,29 @@ function Update-AgentsMd {
 
     if (-not (Test-Path $sourceAgentsPath)) { return }
 
-    # Render: read source template and substitute the {{ rulesDir }} and
-    # {{ rulesExt }} placeholders with the canonical rules directory and file
-    # extension of the highest-priority active tool. Substitution is always
-    # done from the source template (idempotent on repeated updates even if
-    # active tools change).
-    $layout = Resolve-CanonicalRulesLayout -ActiveTools $ActiveTools -Adapters $Adapters
-    if (-not $layout) {
-        Write-Warn 'No active tool defines a rules directory; AGENTS.md placeholders will be left as-is.'
+    # Resolve the canonical installed location for every artefact section
+    # (rules / agents / commands / skills) so the readable source AGENTS.md
+    # can be rewritten into a project-local file with no broken links.
+    $layouts = Resolve-CanonicalArtifactLayouts -ActiveTools $ActiveTools -Adapters $Adapters
+
+    if (-not $layouts -or -not $layouts.Contains('rules')) {
+        Write-Warn 'No active tool defines a rules directory; AGENTS.md content/<section>/ paths will not be rewritten.'
         $rulesDir = '{{ rulesDir }}'
         $rulesExt = '{{ rulesExt }}'
     }
     else {
-        $rulesDir = [string]$layout.Dir
-        $rulesExt = [string]$layout.Ext
+        $rulesDir = [string]$layouts['rules'].Dir
+        $rulesExt = [string]$layouts['rules'].Ext
         if (-not $rulesExt) { $rulesExt = 'md' }
     }
+
     $sourceText = Read-TextFile $sourceAgentsPath
-    $rendered = $sourceText.Replace('{{ rulesDir }}', $rulesDir).Replace('{{ rulesExt }}', $rulesExt)
+    # 1) Rewrite content/<section>/... → <canonical installed dir>/...
+    $rendered = Convert-AgentsMdPaths -Text $sourceText -Layouts $layouts
+    # 2) Backward-compat: still substitute the legacy {{ rulesDir }} /
+    #    {{ rulesExt }} placeholders for source revisions that pre-date the
+    #    rewriter (no-op when the source already uses content/<section>/ paths).
+    $rendered = $rendered.Replace('{{ rulesDir }}', $rulesDir).Replace('{{ rulesExt }}', $rulesExt)
 
     # Copy or refresh only when safe: the file does not exist locally, or it
     # was installed by us previously and has not been user-modified since.
@@ -2102,7 +2244,13 @@ function Invoke-Init {
     if ($integrations.Contains('openspec')) { Write-Info "  integration: openspec ($($integrations.openspec.files.Count) files)" }
 
     Write-Section 'Phase 4: Plan'
-    Write-Info "Will write per-tool files into: .$($activeTools -join ', .')"
+    $planDirs = @()
+    foreach ($t in $activeTools) {
+        $primary = Get-AdapterPrimaryDir $adapters[$t]
+        if (-not $primary) { $primary = ".$t" }
+        $planDirs += "$t -> $primary/"
+    }
+    Write-Info ("Will write per-tool files into: " + ($planDirs -join ', '))
     Write-Info "MCP servers will be added to each tool's MCP config."
     if (-not $AssumeYes -and -not $NonInteractive) {
         if (-not (Read-YesNo 'Proceed with installation?' $true)) { return }

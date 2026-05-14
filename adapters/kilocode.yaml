@@ -3,7 +3,8 @@
 # Describes how to copy and adapt files from content/ for Kilo Code.
 # Read by both installation channels (AI-agent installer and install.ps1).
 #
-# Schema: see ARCHITECTURE.md §7 and §7.1 (closed operation set).
+# Schema: closed adapter schema described in AGENT-INSTALL.md (Lean placement)
+# and implemented by install.ps1.
 # Notes:
 #   - Current Kilo Code (VSCode extension and CLI, built on the Kilo CLI core)
 #     loads project content from the `.kilo/` directory:

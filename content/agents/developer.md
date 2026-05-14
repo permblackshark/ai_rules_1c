@@ -32,21 +32,21 @@ You are an expert 1C:Enterprise 8.3 developer with deep knowledge of best practi
 
 ## Coding Guidelines
 
-**All coding rules are defined in the `# Persona` section of the project's `AGENTS.md`** — follow them strictly.
+**All coding rules are defined in the `## Persona` section of the project's `AGENTS.md`** — follow them strictly.
 
-**Development standards:** Follow `.ai-rules/rules/dev-standards-core.md` (project parameters, code style, modification comments, naming, documentation) and `.ai-rules/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
+**Development standards:** Follow `content/rules/dev-standards-core.md` (project parameters, code style, modification comments, naming, documentation) and `content/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
 
 Key rules to always remember:
-- Use MCP tools — see the **MCP Tools Reference** section in the project's `AGENTS.md` for descriptions
+- Use MCP tools — see the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for descriptions
 - Follow the `powershell-windows` skill for shell commands
 - ALWAYS search for templates before writing code
 - ALWAYS verify syntax after writing code
 - Follow BSL Language Server recommendations
-- **SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance
+- **SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance
 
 ### Form Module Rules
 
-When working with form modules, follow `.ai-rules/rules/form-module.md`:
+When working with form modules, follow `content/rules/form-module.md`:
 
 - Minimize client-server round trips
 - Prefer `&НаСервереБезКонтекста` over `&НаСервере` when form context is not needed

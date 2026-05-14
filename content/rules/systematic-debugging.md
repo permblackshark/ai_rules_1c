@@ -1,0 +1,133 @@
+---
+description: Systematic 4-phase debugging methodology adapted for 1C (reproduce → hypothesize → experiment → fix)
+alwaysApply: false
+category: quality
+---
+
+# Systematic Debugging — 1C Adaptation
+
+**When to load this file:** any task that involves diagnosing a bug, runtime error, regression, performance regression, or unexpected behavior — whether the parent agent is debugging directly or delegating to the `1c-error-fixer` / `1c-performance-optimizer` subagent.
+
+**Goal:** replace ad-hoc trial-and-error with a structured root-cause loop. Skipping a phase is a defect, the same way as skipping `syntaxcheck` after editing code.
+
+The methodology is adapted from the `systematic-debugging` skill of [obra/superpowers](https://github.com/obra/superpowers) and combined with 1C platform mechanics (debugger, `ЖурналРегистрации`, `ОтчетПоЖурналуРегистрации`, `ПоказатьЗначение`, `СообщитьПользователю`, `Replay` of background jobs, technological log).
+
+## Core principle
+
+> **Reproduce first, hypothesize second, change code last.**
+
+If you cannot reproduce the defect deterministically, you have no signal that any fix worked. Every "it should be fixed now" without a reproduction step is a regression waiting to happen.
+
+## The four phases
+
+You MUST complete all four phases in order. Do not jump to phase 4 ("write the fix") before phases 1–3 have produced verifiable artifacts.
+
+### Phase 1 — Reproduce
+
+Goal: a deterministic, minimal reproduction case in a controlled environment.
+
+Required outputs of this phase:
+
+- exact infobase (file or SQL — record the connection string), platform version, configuration / extension versions;
+- exact user, role set, session parameters, locale;
+- exact input data (document number / catalog reference / register record key) — copy or anonymize, do not paraphrase;
+- exact reproduction steps (UI clicks, form, command, or API call);
+- exact observed result (error message, stack trace, wrong value, slow timing);
+- exact expected result.
+
+Tools to use:
+
+- **Configurator → Debug** (`Отладка → Подключиться`) to attach to the running session, capture the call stack, inspect locals.
+- **`ЖурналРегистрации`** filter by date range / user / event / metadata to find the failing call. For high-volume errors prefer `ВыгрузитьЖурналРегистрации` to a `ТаблицаЗначений` for offline analysis.
+- **Technological log** (`logcfg.xml`) for platform-level events (DBMS errors, deadlocks, lock conflicts, timeouts) when the application log is not enough.
+- **`ОбработкаПроведения`** + the `Replay` mechanism for documents — re-post the failing document under the debugger.
+- **MCP**: `codesearch` / `search_code` to find the exact procedure that printed the error message, `search_function` to locate it by name, `get_module_structure` to get its surroundings.
+
+If you cannot reproduce, **stop**. Ask the user for missing input data, screenshots, the exact step sequence, or a copy of the infobase. Do not guess.
+
+### Phase 2 — Hypothesize
+
+Goal: a small set of falsifiable hypotheses about the root cause, ranked by likelihood.
+
+For each hypothesis state:
+
+- **Statement** — exactly which code path / metadata / data state causes the symptom.
+- **Falsifying experiment** — what would prove the hypothesis wrong (a log line that should appear but doesn't; a value that should be `Неопределено`; a query that should return an empty result; a lock that should not be acquired).
+- **Cost of the experiment** — cheap (read-only query / `ПоказатьЗначение`) vs. expensive (rebuild infobase, reload data).
+
+Tools to use:
+
+- **`trace_call_chain`** (`direction="callers"`) to map all the call paths that reach the failing routine.
+- **`trace_impact`** to map which objects the failing routine depends on (registers it reads, common modules it calls, metadata it touches).
+- **`get_method_call_hierarchy`** as a fallback when the graph server is unavailable.
+- **`docinfo`** to verify that a built-in function actually does what you assume — many bugs are platform-version-dependent (`ТекущаяДатаСеанса` vs `ТекущаяДата`, `НайтиПоНаименованию` collation, `ПолучитьСтруктуруХраненияБазыДанных` differences across versions).
+- **`its_help` → `fetch_its`** to verify the documented behaviour of the platform mechanism you suspect.
+- **`ask_1c_ai`** as a hint generator (treat as a draft — do not let an AI hint replace the falsifying experiment).
+
+Produce at least 2 hypotheses. A single hypothesis is anchoring bias — challenge it with a competing one even if it feels obviously right.
+
+### Phase 3 — Experiment
+
+Goal: confirm or reject each hypothesis with concrete evidence, **without changing production code**.
+
+Allowed experimental tools (read-only or scoped to a copy of the infobase):
+
+- **debugger watches** (`Просмотр → Локальные`, `Выражение`) at the suspected line.
+- **`ЗаписьЖурналаРегистрации("Debug.<Module>", УровеньЖурналаРегистрации.Информация, , , <Структура>)`** — temporary log lines, removed before the fix is committed.
+- **`ПоказатьЗначение(Неопределено, <Объект>)`** for client-side diagnostics; **`СообщитьПользователю` / `Сообщение.Сообщить()`** for server-side.
+- **read-only queries** in the configurator's `Console of queries` (`Консоль запросов`) against the failing data — never mutate.
+- **`КопироватьИнформационнуюБазу`** or a SQL snapshot **before** any destructive experiment. The rule is: experiments either run on a copy or do not run at all.
+
+Forbidden during experiments:
+
+- Editing production code "to test a theory". Every code change must come from a confirmed hypothesis in phase 4.
+- `Удалить()` / `Записать()` / `ЗаписатьИзменения()` / direct SQL DML against a live infobase.
+- Disabling roles, profile or session parameter changes that affect other users.
+
+After the experiment, write down the result:
+
+> Hypothesis: `<...>` — **confirmed** by `<observed evidence>` / **rejected** by `<observed evidence>`.
+
+If all hypotheses are rejected, return to phase 2 and produce new ones. Do not weaken the hypotheses to fit the data.
+
+### Phase 4 — Fix
+
+Goal: minimal code change that addresses the **confirmed** root cause, plus a regression guard.
+
+Required:
+
+- The fix touches only the code paths involved in the confirmed hypothesis (Surgical Changes principle from `AGENTS.md`).
+- A regression guard exists: a query, a `ЖурналРегистрации` event, an `Утверждение`, or — at minimum — a documented manual reproduction step in the change description.
+- All temporary `ЗаписьЖурналаРегистрации("Debug.*"`, `ПоказатьЗначение`, hard-coded values, breakpoints, and TODO markers introduced in phase 3 are removed.
+- Verification chain runs cleanly: `syntaxcheck` → `check_1c_code` → `review_1c_code` → `trace_impact` against the touched objects (see `verification-checklist.md`).
+- The original reproduction case from phase 1 no longer triggers the symptom.
+
+If the fix requires architectural rework (signature changes in shared common modules, metadata edits, a new register), escalate — call the `1c-architect` or `1c-developer` subagent rather than expanding the scope of the bug fix yourself.
+
+## Anti-patterns
+
+- **"Probably this `Если` should be `Иначе`"** without a reproduction or experiment — a guess.
+- **Adding `Попытка / Исключение` to silence the error** without identifying the cause — hides the bug, does not fix it.
+- **Re-posting / re-recording / `Записать(РежимЗаписиДокумента.Запись)`** as a fix instead of investigating why the data is wrong.
+- **Restarting the user session** as a fix.
+- **Reindexing / `Тестирование и исправление`** as a fix without documenting which specific structural inconsistency was repaired.
+- **Disabling the failing test / removing the failing assertion** instead of fixing the code under test.
+- **"Works on my machine"** when the user reports the bug — you do not have a reproduction yet, you have a hypothesis. Go back to phase 1.
+
+## Process flow
+
+```
+Reproduce ──► Hypothesize ──► Experiment ──► Fix
+   ▲              ▲                │            │
+   │              │                ▼            │
+   │              └── new hypotheses ◄── all hypotheses rejected
+   │
+   └── cannot reproduce ── ASK USER, do not proceed
+```
+
+## Companion rules
+
+- `verification-checklist.md` — the post-fix gate.
+- `subagent-pipeline.md` — when to delegate the bug to `1c-error-fixer` vs. handle it directly.
+- `tooling-playbooks.md → Error Fixing` — concrete MCP tool sequence for each phase.
+- `anti-patterns.md` — to recognize anti-patterns that produce bugs in the first place.

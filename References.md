@@ -1,8 +1,8 @@
 # References
 
-Подборка проектов с правилами / навыками для AI-ассистентов в разработке на 1С.
+Curated list of projects with rules / skills for AI assistants targeting 1C development.
 
-## Правила и навыки для 1С
+## Rules and skills for 1C
 
 - [1c-agent-based-dev-framework](https://github.com/SteelMorgan/1c-agent-based-dev-framework) — SteelMorgan
 - [1c-ai-development-kit](https://github.com/Arman-Kudaibergenov/1c-ai-development-kit) — Arman-Kudaibergenov
@@ -23,6 +23,8 @@
 - [Pauk_1C](https://github.com/Mempemp/Pauk_1C) — Mempemp
 - [universal_1c_rules](https://github.com/fairballer-rgb/universal_1c_rules) — fairballer-rgb
 
-## Универсальные правила для AI-агентов
+## Generic rules for AI agents
 
-- [andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) — правила Карпатого (forrestchang): четыре принципа AI-кодинга (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution).
+- [andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) — Karpathy's rules (forrestchang): four AI-coding principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution).
+- [superpowers](https://github.com/obra/superpowers) — Jesse Vincent / obra: skill framework for coding agents (brainstorming, writing-plans, executing-plans, subagent-driven-development, systematic-debugging, verification-before-completion, requesting/receiving-code-review, using-git-worktrees, finishing-a-development-branch, writing-skills). Source for the on-demand rules `subagent-pipeline.md`, `systematic-debugging.md`, `verification-checklist.md` (adapted to 1C specifics — see `AGENTS.md → Additional rules (load on demand)`).
+- [mattpocock/skills](https://github.com/mattpocock/skills) — Matt Pocock: a set of Claude Code skills from his `.claude` (engineering: `diagnose`, `grill-with-docs`, `improve-codebase-architecture`, `to-prd`, `to-issues`, `triage`, `zoom-out`, `prototype`; productivity: `caveman`, `grill-me`, `handoff`, `write-a-skill`). Source for `content/skills/handoff/SKILL.md` (adapted to 1C: default path `handoffs/`, references to `openspec/`, `memory.md`, `1c-templates-mcp`, gates from `verification-checklist.md`).

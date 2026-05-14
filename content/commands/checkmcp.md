@@ -2,46 +2,46 @@
 description: Check availability of 1C MCP servers and install/start the missing ones
 ---
 
-# Проверка и установка MCP-серверов для 1С
+# /checkmcp — check and install 1C MCP servers
 
-Команда проверяет, что все MCP-серверы из каталога проекта (`content/mcp-servers.json`; после установки 1c-rules — рендер в конфиг активного инструмента, например `.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`) реально доступны в текущей сессии, и помогает запустить/установить то, чего не хватает.
+This command checks that all MCP servers from the project catalog (`content/mcp-servers.json`; after 1c-rules installation, rendered into the active tool config such as `.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`) are actually available in the current session, and helps start or install missing ones.
 
-Источник правды по образам, портам и переменным окружения — [docs.onerpa.ru/mcp-servery-1c](https://docs.onerpa.ru/mcp-servery-1c) и [vibecoding1c.ru/mcp_server](https://vibecoding1c.ru/mcp_server).
+The source of truth for images, ports, and environment variables is [docs.onerpa.ru/mcp-servery-1c](https://docs.onerpa.ru/mcp-servery-1c) and [vibecoding1c.ru/mcp_server](https://vibecoding1c.ru/mcp_server).
 
-## Целевой каталог серверов
+## Target server catalog
 
-| id | Порт | Docker-образ | Назначение | Требует данных |
+| id | Port | Docker image | Purpose | Requires data |
 |---|---|---|---|---|
-| `1c-syntax-checker-mcp` | 8002 | `comol/1c_syntaxcheck_mcp:latest` | Синтаксис BSL (BSL Language Server) | Нет |
-| `1c-templates-mcp` | 8004 | `comol/1c_templates_mcp:latest` | Шаблоны и проектная память (`remember`/`recall`) | Нет |
-| `1c-ssl-mcp` | 8008 | `comol/mcp_ssl_server:latest` | Поиск по БСП | Нет (`SSL_VERSION`) |
-| `1C-docs-mcp` | 8003 | `comol/1c_help_mcp:latest` | Справка платформы 1С (RAG) | Да — папка `bin` платформы |
-| `1c-code-metadata-mcp` | 8000 | `comol/1c_code_metadata_mcp:latest` | Метаданные/код/формы/XSD | Да — выгрузка конфигурации |
-| `1c-graph-metadata-mcp` | 8006 | `comol/1c_graph_metadata_mcp:latest` | Графовый поиск (Neo4j) | Да — выгрузка + Neo4j |
-| `1c-code-check-mcp` | 8007 | `comol/1c_code_checker_mcp:latest` | 1С:Напарник, ИТС | Нет (токен Напарника) |
+| `1c-syntax-checker-mcp` | 8002 | `comol/1c_syntaxcheck_mcp:latest` | BSL syntax (BSL Language Server) | No |
+| `1c-templates-mcp` | 8004 | `comol/1c_templates_mcp:latest` | Templates and project memory (`remember`/`recall`) | No |
+| `1c-ssl-mcp` | 8008 | `comol/mcp_ssl_server:latest` | BSP/SSL search | No (`SSL_VERSION`) |
+| `1C-docs-mcp` | 8003 | `comol/1c_help_mcp:latest` | 1C platform help (RAG) | Yes — platform `bin` folder |
+| `1c-code-metadata-mcp` | 8000 | `comol/1c_code_metadata_mcp:latest` | Metadata/code/forms/XSD | Yes — configuration dump |
+| `1c-graph-metadata-mcp` | 8006 | `comol/1c_graph_metadata_mcp:latest` | Graph search (Neo4j) | Yes — dump + Neo4j |
+| `1c-code-check-mcp` | 8007 | `comol/1c_code_checker_mcp:latest` | 1C:Assistant, ITS | No (Assistant token) |
 
-> Точные имена образов могут отличаться от версии к версии — если `docker pull` падает с `manifest unknown`, свериться с актуальным списком на [docs.onerpa.ru/mcp-servery-1c/servery.md](https://docs.onerpa.ru/mcp-servery-1c/servery.md).
+> Exact image names may differ by version. If `docker pull` fails with `manifest unknown`, check the current list at [docs.onerpa.ru/mcp-servery-1c/servery.md](https://docs.onerpa.ru/mcp-servery-1c/servery.md).
 
-## Алгоритм
+## Algorithm
 
-### Шаг 1. Определить набор серверов
+### Step 1. Determine the server set
 
-1. Если в проекте есть `.ai-rules.json` — взять каталог из конфига активного инструмента, который указан в манифесте (`.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`).
-2. Иначе — взять `content/mcp-servers.json` из репозитория правил.
-3. Если ничего из этого нет — использовать таблицу выше как набор по умолчанию.
+1. If the project has `.ai-rules.json`, take the catalog from the active tool config referenced by the manifest (`.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`).
+2. Otherwise use `content/mcp-servers.json` from the rules repository.
+3. If neither source exists, use the table above as the default set.
 
-### Шаг 2. Проверить доступность в текущей сессии агента
+### Step 2. Check availability in the current agent session
 
-Для каждого `id` определить статус **TOOLS_OK** / **TOOLS_MISSING**:
+For each `id`, determine **TOOLS_OK** / **TOOLS_MISSING**:
 
-- **TOOLS_OK** — инструменты этого сервера видны в схеме инструментов текущей сессии (например, `syntaxcheck` для `1c-syntax-checker-mcp`, `templatesearch`/`recall` для `1c-templates-mcp`, `ssl_search` для `1c-ssl-mcp`, `docinfo`/`docsearch` для `1C-docs-mcp`, `metadatasearch`/`codesearch` для `1c-code-metadata-mcp`, `search_metadata`/`get_object_dossier` для `1c-graph-metadata-mcp`, `check_1c_code`/`its_help` для `1c-code-check-mcp`).
-- **TOOLS_MISSING** — инструментов в схеме нет.
+- **TOOLS_OK** — this server's tools are visible in the current session tool schema (for example, `syntaxcheck` for `1c-syntax-checker-mcp`, `templatesearch`/`recall` for `1c-templates-mcp`, `ssl_search` for `1c-ssl-mcp`, `docinfo`/`docsearch` for `1C-docs-mcp`, `metadatasearch`/`codesearch` for `1c-code-metadata-mcp`, `search_metadata`/`get_object_dossier` for `1c-graph-metadata-mcp`, `check_1c_code`/`its_help` for `1c-code-check-mcp`).
+- **TOOLS_MISSING** — no tools are visible in the schema.
 
-Если статус **TOOLS_OK** — сервер считается рабочим, дальше не проверять.
+If status is **TOOLS_OK**, treat the server as working and do not check it further.
 
-### Шаг 3. Проверить HTTP-эндпоинт
+### Step 3. Check HTTP endpoint
 
-Для серверов со статусом **TOOLS_MISSING** дёрнуть HTTP-эндпоинт. PowerShell (Windows):
+For servers with **TOOLS_MISSING**, call the HTTP endpoint. PowerShell (Windows):
 
 ```powershell
 $servers = @(
@@ -65,43 +65,43 @@ foreach ($s in $servers) {
 }
 ```
 
-Любой HTTP-ответ (даже `405`/`400`/`406`) означает, что порт слушает контейнер — статус **HTTP_OK**. Полный таймаут / `Connection refused` — статус **HTTP_DOWN**.
+Any HTTP response (even `405`/`400`/`406`) means a container is listening on the port — status **HTTP_OK**. Full timeout / `Connection refused` means **HTTP_DOWN**.
 
-### Шаг 4. Проверить состояние Docker
+### Step 4. Check Docker state
 
-Если есть хотя бы один **HTTP_DOWN**:
+If at least one server is **HTTP_DOWN**:
 
 ```powershell
 docker version --format '{{.Server.Version}}'
 docker ps --all --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 ```
 
-Возможные исходы:
+Possible outcomes:
 
-- `docker version` падает с ошибкой подключения к движку → **DOCKER_DOWN** (Docker Desktop не запущен) — попросить пользователя запустить Docker Desktop и повторить `/checkmcp`.
-- Контейнер виден в `docker ps -a`, но в состоянии `Exited` → **CONTAINER_STOPPED** — запустить:
+- `docker version` fails with an engine connection error → **DOCKER_DOWN** (Docker Desktop is not running). Ask the user to start Docker Desktop and repeat `/checkmcp`.
+- The container is visible in `docker ps -a`, but its state is `Exited` → **CONTAINER_STOPPED**. Start it:
 
   ```powershell
   docker start <container_name>
   ```
 
-  Имена по умолчанию: `1c_syntaxcheck_mcp`, `1c_templates_mcp`, `mcp_ssl_server`, `1c_help_mcp`, `1c_code_metadata_mcp`, `1c_graph_metadata_mcp`, `1c_code_checker_mcp` (фактическое имя смотреть в выводе `docker ps -a`).
+  Default names: `1c_syntaxcheck_mcp`, `1c_templates_mcp`, `mcp_ssl_server`, `1c_help_mcp`, `1c_code_metadata_mcp`, `1c_graph_metadata_mcp`, `1c_code_checker_mcp` (check the actual name in `docker ps -a`).
 
-- Контейнера нет в `docker ps -a` → **CONTAINER_MISSING**. Образ может уже лежать в кэше (`docker images`), но контейнер не создан. Создать и запустить — см. шаг 5.
+- The container is absent from `docker ps -a` → **CONTAINER_MISSING**. The image may already be cached (`docker images`), but the container was not created. Create and start it — see Step 5.
 
-### Шаг 5. Установить недостающий сервер
+### Step 5. Install missing server
 
-**Не запускать `docker run` молча.** Сначала запросить у пользователя:
+**Do not run `docker run` silently.** First ask the user for:
 
-- `LICENSE_KEY` — лицензионный ключ MCP-серверов (общий для всех).
-- Пути к локальным данным для серверов, которые этого требуют:
-  - `1C-docs-mcp` — путь к папке `bin` платформы (например, `C:\Program Files\1cv8\8.3.23.1997\bin`).
-  - `1c-code-metadata-mcp`, `1c-graph-metadata-mcp` — путь к каталогу выгрузки конфигурации (`DumpConfigToFiles`).
-  - `1c-ssl-mcp` — версия БСП (`SSL_VERSION`, например `3.1.11`).
-  - `1c-code-check-mcp` — токен 1С:Напарника, если планируется использовать.
-- Каталог для томов индексов (`-v ...:/app/chroma_db`) — общая папка вроде `E:\bases\mcp_<id>`.
+- `LICENSE_KEY` — shared MCP server license key.
+- Local data paths for servers that need them:
+  - `1C-docs-mcp` — platform `bin` folder path (for example, `C:\Program Files\1cv8\8.3.23.1997\bin`).
+  - `1c-code-metadata-mcp`, `1c-graph-metadata-mcp` — configuration dump directory (`DumpConfigToFiles`).
+  - `1c-ssl-mcp` — BSP/SSL version (`SSL_VERSION`, for example `3.1.11`).
+  - `1c-code-check-mcp` — 1C:Assistant token, if it will be used.
+- Index volume directory (`-v ...:/app/chroma_db`) — common folder such as `E:\bases\mcp_<id>`.
 
-Шаблоны команд запуска (минимальный набор без подготовки данных):
+Command templates (minimal set without data preparation):
 
 ```powershell
 # 1c-syntax-checker-mcp
@@ -136,7 +136,7 @@ docker run -d -p 8000:8000 --name 1c_code_metadata_mcp `
   -v "{DATA_ROOT}\mcp_code_metadata:/app/chroma_db" `
   comol/1c_code_metadata_mcp:latest
 
-# 1c-graph-metadata-mcp — отдельная установка Neo4j, см. документацию
+# 1c-graph-metadata-mcp — separate Neo4j setup, see docs
 # https://docs.onerpa.ru/mcp-servery-1c/servery/graph-metadata-search.md
 
 # 1c-code-check-mcp
@@ -145,7 +145,7 @@ docker run -d -p 8007:8007 --name 1c_code_checker_mcp `
   comol/1c_code_checker_mcp:latest
 ```
 
-Точные актуальные команды для каждого сервера — на странице конкретного сервера в документации:
+Exact current commands for each server are on the server-specific documentation page:
 
 - [HelpSearchServer](https://docs.onerpa.ru/mcp-servery-1c/servery/help-search-server.md)
 - [CodeMetadataSearchServer](https://docs.onerpa.ru/mcp-servery-1c/servery/code-metadata-search.md)
@@ -155,26 +155,26 @@ docker run -d -p 8007:8007 --name 1c_code_checker_mcp `
 - [TemplatesSearchServer](https://docs.onerpa.ru/mcp-servery-1c/servery/templates-search-server.md)
 - [1CCodeChecker](https://docs.onerpa.ru/mcp-servery-1c/servery/code-checker.md)
 
-### Шаг 6. После установки/запуска
+### Step 6. After install/start
 
-1. Подождать 5–15 секунд (контейнеру нужно прогреться; для серверов с RAG-индексацией — десятки минут до часов на первом запуске, следить через `docker logs -f <name>`).
-2. Повторить шаг 3 (HTTP-проверка) — все статусы должны стать **HTTP_OK**.
-3. Если в MCP-конфиге активного инструмента сервер отсутствует — добавить запись (соответствующий рендер уже сделан установщиком 1c-rules; если установка не запускалась — внести вручную, см. `adapters/<tool>.yaml → mcp.schema`).
-4. Перезапустить клиент (Cursor / Claude Code / Codex / OpenCode / Kilo Code), чтобы он переинициализировал MCP-сессию.
-5. Запустить `/checkmcp` ещё раз — статусы шага 2 должны стать **TOOLS_OK**.
+1. Wait 5-15 seconds (the container needs warm-up; RAG-indexed servers may need tens of minutes or hours on first launch, monitor with `docker logs -f <name>`).
+2. Repeat Step 3 (HTTP check); all statuses should become **HTTP_OK**.
+3. If the server is absent from the active tool MCP config, add the entry (1c-rules installer should already have rendered it; if installation was not run, add it manually using `adapters/<tool>.yaml → mcp.schema`).
+4. Restart the client (Cursor / Claude Code / Codex / OpenCode / Kilo Code) so it reinitializes the MCP session.
+5. Run `/checkmcp` again; Step 2 statuses should become **TOOLS_OK**.
 
-## Финальный отчёт
+## Final report
 
-Сводная таблица для пользователя:
+Summary table for the user:
 
-| Сервер | Tools в сессии | HTTP | Контейнер | Действие |
+| Server | Session tools | HTTP | Container | Action |
 |---|---|---|---|---|
-| `…` | OK / нет | OK / down | running / stopped / missing | ничего / `docker start` / `docker run` / переподключить клиент |
+| `...` | OK / missing | OK / down | running / stopped / missing | none / `docker start` / `docker run` / reconnect client |
 
-Под таблицей — список явных следующих шагов (с командами под копирование), без перечисления того, что уже работает.
+Under the table, list clear next steps with copy-ready commands. Do not list items that already work.
 
-## Ограничения
+## Limits
 
-- Команда не запускает `docker run` без подтверждения пользователя — нужны `LICENSE_KEY`, пути к данным и согласие на скачивание образов (несколько ГБ).
-- Графовый MCP (`1c-graph-metadata-mcp`) требует отдельной установки Neo4j и индексации — это многошаговый процесс, его выполнять по документации на странице сервера, а не из этой команды.
-- Серверы с RAG-индексацией (`1C-docs-mcp`, `1c-code-metadata-mcp`, `1c-graph-metadata-mcp`, `1c-ssl-mcp`) могут отвечать на HTTP, но ещё не быть полезными — пока идёт первичная индексация. Это нормально, проверять прогресс через `docker logs -f <name>`.
+- The command does not run `docker run` without user confirmation; it needs `LICENSE_KEY`, data paths, and consent to download images (several GB).
+- Graph MCP (`1c-graph-metadata-mcp`) requires separate Neo4j setup and indexing. This is a multi-step process; execute it by the server documentation page, not from this command.
+- RAG-indexed servers (`1C-docs-mcp`, `1c-code-metadata-mcp`, `1c-graph-metadata-mcp`, `1c-ssl-mcp`) may respond over HTTP before becoming useful while primary indexing is still running. This is normal; monitor progress with `docker logs -f <name>`.

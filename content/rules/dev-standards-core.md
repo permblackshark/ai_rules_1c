@@ -8,18 +8,18 @@ category: development
 
 ## 1. Project Parameters (.dev.env)
 
-**Before starting any code task**, read the `.dev.env` file from the project root. If it does not exist — **stop and request parameters from the user** (or run the 1c-rules installer, which creates `.dev.env` from the template). Guessing values is PROHIBITED.
+Read `.dev.env` only when the task depends on project parameters: prefix / naming, modification comments, platform-version choices, metadata placement, infobase commands, deploy, or UI tests. If a required parameter is missing — stop and request it from the user (or run the 1c-rules installer, which creates `.dev.env` from the template). Guessing values is PROHIBITED.
 
 `.dev.env` is the **single source of truth** for project parameters across the whole rules set. There is no `infobasesettings.md`, no separate per-command settings file — all rules, on-demand instructions, slash commands and subagents read from `.dev.env`.
 
-### Code-generation parameters (mandatory for any code task)
+### Code-generation parameters (mandatory when code generation depends on them)
 
 | Parameter | Effect |
 |---|---|
 | `{PREFIX}` | Prefix for ALL new metadata objects, attributes, form elements, roles |
 | `{COMPANY}` | Used in modification comment templates |
 | `{DEVELOPER}` | Used in modification comment templates |
-| `{PLATFORM_VERSION}` | Determines available platform features (e.g. `Асинх` / `Ждать` from 8.3.18 vs `ОписаниеОповещения` callbacks for older versions). See `dev-standards-architecture.md §3 "Async and Modality"` |
+| `{PLATFORM_VERSION}` | Determines available platform features (e.g. `Асинх` / `Ждать` from 8.3.18 vs `ОписаниеОповещения` callbacks for older versions). See `dev-standards-architecture.md §3 → "Async and Modality"` |
 | `{COMMENT_OPEN}` | Opening modification comment template with placeholders `{COMPANY}`, `{DEVELOPER}`, `{DATE}`, `{TASK}` |
 | `{COMMENT_CLOSE}` | Closing modification comment template |
 | `{NEW_OBJECTS_IN}` | Where to place new objects: `main_configuration` (default) or `extension` |
@@ -79,7 +79,7 @@ Exception: simple `Prefix + Suffix` is acceptable when it reads better.
 - `Попытка ... Исключение` around DB reads/writes is **PROHIBITED**, except for explicit, well-justified transaction control.
 - `ЗаписьЖурналаРегистрации()` is **PROHIBITED** unless explicitly requested by the task.
 - `Сообщить()` for user notifications is **PROHIBITED**. Use `ОбщегоНазначения.СообщитьПользователю` (server) / `ОбщегоНазначенияКлиент.СообщитьПользователю` (client).
-- `Выполнить()` and `Вычислить()` are **PROHIBITED** without extreme necessity (see `dev-standards-architecture.md §3`).
+- `Выполнить()` and `Вычислить()` are **PROHIBITED** without extreme necessity (see `dev-standards-architecture.md §3 → "Security"`).
 - Hardcoded credentials (passwords, tokens, API keys) in code are **PROHIBITED**.
 - `?(Условие, Значение1, Значение2)` ternary operator is **PROHIBITED in any form**, including the simple non-nested case. Use `Если ... Иначе` or extract a small helper function. Rationale: keeps logic visible in step-debugger and code review. **[Project rule — stricter than ITS standard.]**
 - Boolean comparisons against `Истина` / `Ложь` are forbidden — use the boolean expression directly.
@@ -213,7 +213,7 @@ These rules apply only to 1C code artifacts: modules, in-module comments, identi
 
 ## 7. Comments — OK / NOT OK Examples
 
-Goal: cut LLM noise and keep only useful comments. See also `AGENTS.md → Comments` for the headline rule.
+Goal: cut LLM noise and keep only useful comments. See also `content/rules/coding-standards.md § Comments` for the headline rule (anchor from `AGENTS.md → Coding Standards`).
 
 ### NOT OK — code paraphrase and noise
 

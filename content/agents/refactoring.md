@@ -20,7 +20,7 @@ You are an expert 1C code refactoring specialist focused on code cleanup, consol
 
 ## MCP Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool descriptions. Follow the `powershell-windows` skill for shell commands.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for tool descriptions. Follow the `powershell-windows` skill for shell commands.
 
 **Key tools for refactoring:**
 - **codesearch** — find all usages of code being refactored
@@ -35,7 +35,7 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool de
 - **review_1c_code** — check style and ITS standards compliance
 - **rewrite_1c_code** — get AI-improved version of code (with `goal` parameter: `optimize`, `readability`)
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ## Refactoring Workflow
 
@@ -45,8 +45,8 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool de
 a) Identify refactoring candidates
    - Unused procedures/functions
    - Duplicate code blocks
-   - Complex functions (>50 lines)
-   - Deep nesting (>4 levels)
+   - Long methods — review trigger >100 lines, hard limit >200 lines (see `content/rules/dev-standards-core.md §2 → "Quality Metrics"`; exception: query texts)
+   - Deep nesting (>4 levels — see `content/rules/dev-standards-core.md §2 → "Quality Metrics"`)
    - Performance issues (queries in loops)
 
 b) Categorize by risk level:
@@ -79,24 +79,24 @@ d) Document all changes
 
 ## Refactoring Patterns
 
-See `.ai-rules/rules/anti-patterns.md` for detailed patterns with code examples:
+See `content/rules/anti-patterns.md` for detailed patterns with code examples:
 
 | Pattern | Reference |
 |---------|-----------|
 | Dead Code Removal | Remove unused procedures after verifying no references |
 | Duplicate Consolidation | Extract common logic to shared procedures |
-| Query Optimization | `.ai-rules/rules/anti-patterns.md#query-in-loop` |
-| Attribute Access | `.ai-rules/rules/anti-patterns.md#direct-attribute-access` |
-| Complexity Reduction | `.ai-rules/rules/anti-patterns.md#deep-nesting` |
-| Caching | `.ai-rules/rules/anti-patterns.md#missing-caching` |
+| Query Optimization | `content/rules/anti-patterns.md → "Query in Loop"` |
+| Attribute Access | `content/rules/anti-patterns.md → "Direct Attribute Access (Dot Notation)"` |
+| Complexity Reduction | `content/rules/anti-patterns.md → "Deep Nesting"` |
+| Caching | `content/rules/anti-patterns.md → "Missing Caching"` |
 
 ## 1C-Specific Refactoring Rules
 
 ### Module Region Organization
 
-Ensure proper region structure as defined in the `# Persona` section of `AGENTS.md`.
+Ensure proper region structure as defined in the `## Persona` section of `AGENTS.md`.
 
-**Development standards:** Follow `.ai-rules/rules/dev-standards-core.md` (project parameters, code style, naming) and `.ai-rules/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
+**Development standards:** Follow `content/rules/dev-standards-core.md` (project parameters, code style, naming) and `content/rules/dev-standards-architecture.md` (architecture patterns, extensions, platform standards).
 
 Regions:
 - `ПрограммныйИнтерфейс` — public interface
@@ -105,7 +105,7 @@ Regions:
 
 ### Form Module Optimization
 
-Follow the performance guidelines in the `# Persona` section of `AGENTS.md`:
+Follow the performance guidelines in the `## Persona` section of `AGENTS.md`:
 - Prefer `&НаСервереБезКонтекста`
 - Minimize client-server calls
 

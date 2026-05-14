@@ -2,28 +2,50 @@
 description: Extract configuration objects from infobase to files for editing
 ---
 
-# Выгрузка объектов конфигурации из ИБ в файлы
+# /getconfigfiles — extract configuration objects from an infobase
 
-См. полное описание правила в `content/rules/getconfigfiles.md` (после установки — `.ai-rules/rules/getconfigfiles.md`).
+See the full rule in `content/rules/getconfigfiles.md`.
 
-## Параметры
+## Parameters
 
-Все пути и идентификаторы — через плейсхолдеры из `.dev.env`. Если значения неизвестны — запросить у пользователя.
+All paths and identifiers come from `.dev.env` placeholders. If a value is unknown, ask the user.
 
-| Плейсхолдер | Назначение |
+| Placeholder | Purpose |
 |---|---|
-| `{PLATFORM_PATH}` | Каталог установки платформы 1С (содержит `bin\1cv8.exe`) |
-| `{INFOBASE_PATH}` | Путь к файловой ИБ или строка подключения |
-| `{IB_USER}` | Имя пользователя ИБ |
-| `{IB_PASSWORD}` | Пароль (если задан) |
-| `{EXPORT_PATH}` | Каталог выгрузки исходников |
-| `{EXTENSION_NAME}` | Имя расширения (опустить, если выгружаем из основной конфигурации) |
-| `{LOG_PATH}` | Файл лога Designer’а |
+| `{PLATFORM_PATH}` | 1C platform installation directory containing `bin\1cv8.exe` |
+| `{INFOBASE_PATH}` | File infobase path or server connection string |
+| `{IB_USER}` | Infobase user |
+| `{IB_PASSWORD}` | Password, if set |
+| `{EXPORT_PATH}` | Source export directory |
+| `{EXTENSION_NAME}` | Extension name; omit for the main configuration |
+| `{LOG_PATH}` | Designer log file |
+| `{IBCMD_CONFIG}` | Path to standalone server `config.yml` for `ibcmd`, optional |
 
-## Шаги
+## Steps
 
-1. Сформировать список объектов к выгрузке в `repoobjects.txt` (одно полное имя метаданного объекта на строку). Списки собирать через `metadatasearch` / `search_metadata`.
-2. Запустить выгрузку:
+1. Build the object list in `repoobjects.txt` (one fully qualified metadata object name per line). Collect the list through `metadatasearch` / `search_metadata`.
+
+2. Choose the tool:
+   - If `Test-Path '{PLATFORM_PATH}\bin\ibcmd.exe'` is true and `IBCMD_CONFIG` is filled, use **2a (`ibcmd`)**.
+   - Otherwise use **2b (Designer)**. `ibcmd infobase config` does not apply to 1C cluster infobases; for server cluster infobases always use Designer.
+
+**2a.** Partial export through `ibcmd` (objects are read from `repoobjects.txt` and passed as positional arguments):
+
+```powershell
+$objects = Get-Content repoobjects.txt | Where-Object { $_.Trim() -ne '' }
+& '{PLATFORM_PATH}\bin\ibcmd.exe' infobase config export objects `
+    --config='{IBCMD_CONFIG}' `
+    --user='{IB_USER}' `
+    --password='{IB_PASSWORD}' `
+    --recursive `
+    --out='{EXPORT_PATH}' `
+    --extension={EXTENSION_NAME} `
+    @objects *>&1 | Tee-Object -FilePath '{LOG_PATH}'
+```
+
+Remove empty optional keys (`--user`, `--password`, `--extension`). `--recursive` exports child objects (attributes, tabular sections, forms, templates).
+
+**2b.** Partial export through Designer (fallback):
 
 ```powershell
 & '{PLATFORM_PATH}\bin\1cv8.exe' DESIGNER `
@@ -37,6 +59,6 @@ description: Extract configuration objects from infobase to files for editing
     /Out {LOG_PATH}
 ```
 
-Объекты выгружаются полностью, строго в `{EXPORT_PATH}` — без создания подкаталогов. При выгрузке из основной конфигурации убрать `-Extension {EXTENSION_NAME}`.
+Objects are exported fully and strictly into `{EXPORT_PATH}`; no extra subdirectories are created. When exporting the main configuration, remove `-Extension {EXTENSION_NAME}`.
 
-3. Проверить `{LOG_PATH}` на ошибки.
+3. Check `{LOG_PATH}` for errors.

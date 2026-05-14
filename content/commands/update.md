@@ -1,22 +1,22 @@
 ---
-description: Обновить набор правил 1c-rules с GitHub (https://github.com/comol/ai_rules_1c)
+description: Update the 1c-rules ruleset from GitHub (https://github.com/comol/ai_rules_1c)
 ---
 
-# /update — обновить правила 1c-rules
+# /update — update 1c-rules
 
-Источник: `https://github.com/comol/ai_rules_1c`.
+Source: `https://github.com/comol/ai_rules_1c`.
 
-Действие: обновить managed-файлы текущей установки до актуальной версии репозитория (on-demand правила, описания субагентов, слэш-команды, SKILL-пакеты, MCP-конфиг, бандл OpenSpec, рендер `AGENTS.md`). Сохраняются:
+Action: update managed files in the current installation to the latest repository version (on-demand rules, subagent descriptions, slash commands, SKILL packages, MCP config, OpenSpec bundle, rendered `AGENTS.md`). Preserve:
 
-- `USER-RULES.md` и `memory.md` — одноразовые шаблоны, не перезаписываются;
-- содержимое `openspec/specs/` и `openspec/changes/` — копируется в режиме skip-if-exists;
-- любой managed-файл, помеченный `userModified: true` в `.ai-rules.json`.
+- `USER-RULES.md` and `memory.md` — one-time templates, never overwritten;
+- contents of `openspec/specs/` and `openspec/changes/` — copied in skip-if-exists mode;
+- any managed file marked `userModified: true` in `.ai-rules.json`.
 
-## Шаги
+## Steps
 
-1. Убедиться, что в корне проекта есть `.ai-rules.json`. Если файла нет — это первая установка: выполнить `init` по `AGENT-INSTALL.md`, а не `update`.
+1. Make sure `.ai-rules.json` exists at the project root. If it is missing, this is a first install: run `init` by `AGENT-INSTALL.md`, not `update`.
 
-2. Запустить PowerShell-канал из корня проекта. `install.ps1` ожидает в `-Source` локальный путь, поэтому сначала клонируем (или обновляем) исходник в кэш под `$env:TEMP`:
+2. Run the PowerShell channel from the project root. `install.ps1` expects a local path in `-Source`, so first clone or update the source into a cache under `$env:TEMP`:
 
 ```powershell
 $src = Join-Path $env:TEMP '1c-rules'
@@ -29,14 +29,14 @@ if (Test-Path (Join-Path $src '.git')) {
 & "$src\install.ps1" update -Source $src -AssumeYes
 ```
 
-3. Проверить вывод установщика:
-   - `Update complete.` — успех;
-   - сообщения `User-modified files detected: N` — список файлов, в которых найдены локальные правки; они помечаются `userModified` и сохраняются;
-   - сообщения `Verification OK` / `Verification found N mismatch(es)` — состояние свежеразложенных файлов.
+3. Check installer output:
+   - `Update complete.` — success;
+   - `User-modified files detected: N` — files with local edits; they are marked `userModified` and preserved;
+   - `Verification OK` / `Verification found N mismatch(es)` — state of freshly placed files.
 
-4. Если PowerShell недоступен (ограниченная среда, нет `git`/`pwsh`) — выполнить раздел *Update / add / remove* из `AGENT-INSTALL.md` агентским каналом: переразложить managed-файлы из обновлённого клона, перерендерить `AGENTS.md` (плейсхолдеры `{{ rulesDir }}` / `{{ rulesExt }}`), обновить `version` и `updatedAt` в `.ai-rules.json`. `USER-RULES.md` и `memory.md` не трогать.
+4. If PowerShell is unavailable (restricted environment, no `git`/`pwsh`), execute *Update / add / remove* from `AGENT-INSTALL.md` through the agent channel: re-place managed files from the updated clone, re-render `AGENTS.md`, and update `version` and `updatedAt` in `.ai-rules.json`. Do not touch `USER-RULES.md` or `memory.md`.
 
-## Параметры
+## Parameters
 
-- `-AssumeYes` — отвечает «да» на подтверждения и оставляет пользовательские правки (`keep`) на конфликтных файлах. Для полностью автоматического запуска (CI) добавить `-NonInteractive`.
-- `-Tools cursor,claude-code` — не нужно: список активных инструментов берётся из `.ai-rules.json`.
+- `-AssumeYes` — answers "yes" to confirmations and keeps user edits (`keep`) on conflicting files. For a fully automated run (CI), add `-NonInteractive`.
+- `-Tools cursor,claude-code` — not needed: active tools are read from `.ai-rules.json`.

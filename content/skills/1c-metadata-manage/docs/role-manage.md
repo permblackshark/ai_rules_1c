@@ -370,6 +370,6 @@ Exit code: `0` — no errors, `1` — errors found.
 
 ## SDD Integration
 
-When creating or modifying roles as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating or modifying roles as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Add spec deltas describing role purpose, access scope, and RLS rules in `openspec/changes/`.

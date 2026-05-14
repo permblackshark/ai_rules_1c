@@ -6,17 +6,13 @@ category: development
 
 # Coding Standards (headlines)
 
-Authoritative content for code style, naming, comments, queries, data access and performance lives in the detailed on-demand rules: `dev-standards-core.md`, `dev-standards-architecture.md`, `dev-standards-forms.md`, `anti-patterns.md`, `platform-solutions.md`. This file is the index of headlines and anchors. **Before writing or reviewing code, load the relevant detail file.**
+Authoritative content for code style, naming, comments, queries, data access and performance lives in the detailed on-demand rules: `dev-standards-core.md`, `dev-standards-architecture.md`, `dev-standards-forms.md`, `module-structure.md`, `anti-patterns.md`, `platform-solutions.md`, `locks-and-transactions.md`, `logging-strategy.md`. This file is the index of headlines and anchors. **Before writing or reviewing code, load the relevant detail file.**
 
 ## Forbidden Calls and Constructs (project-wide)
 
-- Ternary operator `?(...)` — **PROHIBITED in any form**, including the simple non-nested case. **[Project rule — stricter than ITS standard.]**
-- `Выполнить()` / `Вычислить()` — **PROHIBITED** without extreme necessity.
-- Hardcoded credentials (passwords, tokens, API keys) — **PROHIBITED**.
-- `COMОбъект` — **PROHIBITED** unless explicitly requested by the task.
-- Hungarian notation, names from the 1C global context, Yoda syntax, magic numbers — **PROHIBITED**.
+Single source of truth — `dev-standards-core.md §2 → "Forbidden Calls and Constructs"` (ternary `?(...)`, `Выполнить()` / `Вычислить()`, hardcoded credentials, `COMОбъект`, `Сообщить()`, `ЗаписьЖурналаРегистрации()` without explicit task, `Попытка ... Исключение` around DB reads/writes, boolean comparison against `Истина` / `Ложь`, Yoda syntax). Naming bans (Hungarian notation, names from the 1C global context, magic numbers, negative boolean names) and the `[Project rule — stricter than ITS standard]` markers also live there.
 
-Full list of style rules, naming, comments, formatting, quality metrics and typography — `dev-standards-core.md`.
+Do not duplicate the list here — when the rule changes, only `dev-standards-core.md §2 → "Forbidden Calls and Constructs"` is updated.
 
 ## Comments
 
@@ -24,7 +20,7 @@ Prefer self-documenting code. Comments are appropriate only when they add value:
 
 ## Code Review After Each Edit
 
-After any code edit, perform an internal review: style, readability, correctness, edge cases, security, concurrency, locks, transactions. Always consider whether an outer transaction already exists (e.g., the object-write transaction) before opening a new one. Loop until clean. Full guidance — `dev-standards-core.md §8`.
+After any code edit, perform an internal review: style, readability, correctness, edge cases, security, concurrency, locks, transactions. Always consider whether an outer transaction already exists (e.g., the object-write transaction) before opening a new one. Loop until clean within the verification budget from `AGENTS.md`; after the budget is exhausted, fix substantive issues and report any remaining style noise. Full guidance — `dev-standards-core.md §8`.
 
 ## Code Reuse
 
@@ -32,11 +28,11 @@ Before writing new code — check common and manager modules for an existing exp
 
 ## Module Regions
 
-Canonical region names — Russian, БСП-style. Templates per module type — `dev-standards-forms.md §1`. Regions inside procedures / functions are forbidden; pseudo-regions via comments are forbidden.
+Canonical region names — Russian, БСП-style. Templates per module type (common module, object / manager module, form module) — `module-structure.md`. Regions inside procedures / functions are forbidden; pseudo-regions via comments are forbidden.
 
 ## Queries
 
-Authoritative rules and the formatting template — `dev-standards-architecture.md §3 "Queries"`. Headlines:
+Authoritative rules and the formatting template — `dev-standards-architecture.md §3 → "Queries"`. Headlines:
 
 - Verify metadata before writing a query (`metadatasearch` / `get_metadata_details`).
 - No queries inside loops — use batch queries with temporary tables (`ВТ_*`).
@@ -47,7 +43,7 @@ Authoritative rules and the formatting template — `dev-standards-architecture.
 
 ## Data Access — Reference Attributes
 
-Do not access reference attributes via dot notation (`Контрагент.ИНН`). Use `ОбщегоНазначения.ЗначениеРеквизитаОбъекта` / `ЗначенияРеквизитовОбъекта` / `ЗначениеРеквизитаОбъектов` / `ЗначенияРеквизитовОбъектов`. **[Project rule — stricter than ITS standard.]** Full method table and caching / batch templates — `dev-standards-architecture.md §4`.
+Do not access reference attributes via dot notation (`Контрагент.ИНН`). Use `ОбщегоНазначения.ЗначениеРеквизитаОбъекта` / `ЗначенияРеквизитовОбъекта` / `ЗначениеРеквизитаОбъектов` / `ЗначенияРеквизитовОбъектов`. **[Project rule — stricter than ITS standard.]** Full method table and caching / batch templates — `dev-standards-architecture.md §4 → "Data Access — Reference Attribute Access"`.
 
 ## Performance
 

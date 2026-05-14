@@ -1,49 +1,87 @@
 ---
-description: Загрузить файлы текущего репозитория в заданную в .dev.env базу 1С и обновить структуру БД
+description: Load current repository files into the infobase defined in .dev.env and update the DB structure
 ---
 
-# /update1cbase — загрузка репозитория в ИБ
+# /update1cbase — load repository into an infobase
 
-Загрузка конфигурации (`/LoadConfigFromFiles`) из каталога текущего репозитория в информационную базу, заданную в `.dev.env`, с последующим обновлением структуры БД (`/UpdateDBCfg`).
+Load the configuration (`/LoadConfigFromFiles`) from the current repository directory into the infobase defined in `.dev.env`, then update the database structure (`/UpdateDBCfg`).
 
-Не запускает тестов и не публикует базу — для прогона тестов после загрузки использовать `/deploy-and-test`.
+This command does not run tests and does not publish the infobase. Use `/deploy-and-test` to run tests after loading.
 
-## Шаг 0. Проверить параметры в `.dev.env`
+## Step 0. Check `.dev.env` parameters
 
-`.dev.env` — единый источник правды по параметрам подключения (создаётся установщиком 1c-rules в корне проекта). Если файла нет — попросить пользователя выполнить `install.ps1 init` или вручную скопировать `.dev.env.example` → `.dev.env`.
+`.dev.env` is the single source of truth for connection parameters (created by the 1c-rules installer at the project root). If it is missing, ask the user to run `install.ps1 init` or manually copy `.dev.env.example` to `.dev.env`.
 
-Если в проекте остался устаревший `infobasesettings.md` — перенести значения в `.dev.env` (имена ключей те же, формат — `KEY=value` вместо markdown-списка) и удалить файл; никаких других мест с настройками подключения в наборе правил нет.
+If the project still has legacy `infobasesettings.md`, migrate values to `.dev.env` (same key names, `KEY=value` format instead of a markdown list), preserving already-filled `.dev.env` keys, and delete the legacy file after successful migration. The ruleset has no other connection-settings location.
 
-Используемые ключи `.dev.env`:
+Used `.dev.env` keys:
 
-| Ключ | Назначение |
+| Key | Purpose |
 |---|---|
-| `PLATFORM_PATH` | Каталог установки платформы (содержит `bin\1cv8.exe`) |
-| `INFOBASE_KIND` | `file` (файловая) или `server` (клиент-сервер) |
-| `INFOBASE_PATH` | Путь к файловой ИБ или строка подключения к серверной |
-| `IB_USER` | Имя пользователя ИБ (пусто — без аутентификации) |
-| `IB_PASSWORD` | Пароль (пусто — без пароля) |
-| `EXTENSION_NAME` | Имя расширения (пусто — основная конфигурация) |
-| `EXPORT_PATH` | Каталог исходников (пусто — корень репозитория) |
-| `LOG_PATH` | Файл лога Designer'а |
+| `PLATFORM_PATH` | Platform installation directory containing `bin\1cv8.exe` |
+| `INFOBASE_KIND` | `file` or `server` |
+| `INFOBASE_PATH` | File infobase path or server connection string |
+| `IB_USER` | Infobase user; empty means no authentication |
+| `IB_PASSWORD` | Password; empty means no password |
+| `EXTENSION_NAME` | Extension name; empty means main configuration |
+| `EXPORT_PATH` | Source directory; empty means repository root |
+| `LOG_PATH` | Designer log file |
+| `IBCMD_CONFIG` | Path to standalone server `config.yml` for `ibcmd`, optional |
 
-Если критичные поля пустые (`INFOBASE_PATH`, `PLATFORM_PATH`) — спросить у пользователя и записать в `.dev.env`, не угадывать.
+If critical fields are empty (`INFOBASE_PATH`, `PLATFORM_PATH`), ask the user and write the values to `.dev.env`; do not guess.
 
-## Шаг 1. Соответствие настроек флагам Designer
+Before running, make sure `{EXPORT_PATH}` contains dumped configuration sources (for example, `Configuration.xml` at the root or in the extension subdirectory). If no sources exist, stop and tell the user.
 
-| Поле | Флаг |
+## Step 1. Choose tool: `ibcmd` or Designer
+
+1. Check whether the utility exists: `Test-Path '{PLATFORM_PATH}\bin\ibcmd.exe'`.
+2. Check whether `IBCMD_CONFIG` is filled in `.dev.env`.
+3. If **both conditions are true**, use **Steps 2a and 3a (`ibcmd`)**.
+4. Otherwise use **Steps 2b and 3b (Designer)**.
+
+`ibcmd infobase config` does not apply to 1C cluster infobases; for server cluster infobases always use Designer.
+
+## Step 2a. Load configuration through `ibcmd` (preferred)
+
+```powershell
+& '{PLATFORM_PATH}\bin\ibcmd.exe' infobase config import `
+    --config='{IBCMD_CONFIG}' `
+    --user='{IB_USER}' `
+    --password='{IB_PASSWORD}' `
+    --extension={EXTENSION_NAME} `
+    '{EXPORT_PATH}' *>&1 | Tee-Object -FilePath '{LOG_PATH}'
+```
+
+Remove empty optional keys (`--user`, `--password`, `--extension`). On errors, show the relevant log fragment to the user and **do not continue** to Step 3a.
+
+## Step 3a. Update DB structure through `ibcmd`
+
+```powershell
+& '{PLATFORM_PATH}\bin\ibcmd.exe' infobase config apply `
+    --config='{IBCMD_CONFIG}' `
+    --user='{IB_USER}' `
+    --password='{IB_PASSWORD}' `
+    --force `
+    --dynamic=auto `
+    --session-terminate=force `
+    --extension={EXTENSION_NAME} *>&1 | Tee-Object -FilePath '{LOG_PATH}'
+```
+
+`--session-terminate=force` forcibly terminates active sessions. Use it only on a dev/test infobase. On production, replace it with `--session-terminate=prompt` (or remove the key; default is `auto`) and agree on an update window with the user.
+
+Continue to **Step 4**.
+
+## Step 2b. Load configuration from files through Designer (fallback)
+
+Map `.dev.env` keys to Designer flags:
+
+| Field | Flag |
 |---|---|
 | `INFOBASE_KIND=file` | `/F '{INFOBASE_PATH}'` |
 | `INFOBASE_KIND=server` | `/S '{INFOBASE_PATH}'` |
-| `IB_USER` (если не пусто) | `/N '{IB_USER}'` |
-| `IB_PASSWORD` (если не пусто) | `/P '{IB_PASSWORD}'` |
-| `EXTENSION_NAME` (если не пусто) | `-Extension {EXTENSION_NAME}` |
-
-`{EXPORT_PATH}` по умолчанию — корень текущего репозитория. `{LOG_PATH}` — из `.dev.env`.
-
-Перед запуском убедиться, что `{EXPORT_PATH}` содержит выгруженные исходники конфигурации (например, `Configuration.xml` в корне или в подкаталоге расширения). Если файлов нет — остановиться и сообщить пользователю.
-
-## Шаг 2. Загрузить конфигурацию из файлов
+| `IB_USER` when not empty | `/N '{IB_USER}'` |
+| `IB_PASSWORD` when not empty | `/P '{IB_PASSWORD}'` |
+| `EXTENSION_NAME` when not empty | `-Extension {EXTENSION_NAME}` |
 
 ```powershell
 & '{PLATFORM_PATH}\bin\1cv8.exe' DESIGNER `
@@ -56,13 +94,13 @@ description: Загрузить файлы текущего репозитори
     /Out '{LOG_PATH}'
 ```
 
-Удалить незаполненные опциональные ключи (`/N`, `/P`, `-Extension`). Для основной конфигурации убрать `-Extension {EXTENSION_NAME}` целиком. Для серверной ИБ — `/S` вместо `/F`.
+Remove empty optional keys (`/N`, `/P`, `-Extension`). For the main configuration, remove `-Extension {EXTENSION_NAME}` entirely. For a server infobase, use `/S` instead of `/F`.
 
-Прочитать `{LOG_PATH}`. При ошибках — показать пользователю фрагмент лога и **не продолжать** на шаг 3.
+Read `{LOG_PATH}`. On errors, show the relevant log fragment to the user and **do not continue** to Step 3b.
 
-Подождать 5–10 секунд (платформа отпускает блокировку конфигурации).
+Wait 5-10 seconds so the platform releases the configuration lock.
 
-## Шаг 3. Обновить структуру БД
+## Step 3b. Update DB structure through Designer
 
 ```powershell
 & '{PLATFORM_PATH}\bin\1cv8.exe' DESIGNER `
@@ -75,10 +113,10 @@ description: Загрузить файлы текущего репозитори
     /Out '{LOG_PATH}'
 ```
 
-`-SessionTerminate force` принудительно завершает активные сессии — использовать только на dev/тестовой ИБ. На продуктивной — убрать этот ключ и согласовать окно обновления с пользователем.
+`-SessionTerminate force` forcibly terminates active sessions. Use it only on a dev/test infobase. On production, remove this key and agree on an update window with the user.
 
-Прочитать `{LOG_PATH}` — успех при `Обновление информационной базы выполнено` / `Database configuration update completed`.
+Read `{LOG_PATH}`. Success means `Обновление информационной базы выполнено` / `Database configuration update completed`.
 
-## Шаг 4. Финальный отчёт
+## Step 4. Final report
 
-Кратко: какая ИБ обновлена, из какого каталога, было ли применено динамическое обновление или потребовалась реструктуризация (видно по логу). Ошибки — отдельным списком.
+Briefly report which infobase was updated, which directory was loaded, which tool was used (`ibcmd` or Designer), and whether dynamic update was applied or restructuring was required (visible in the log). List errors separately.

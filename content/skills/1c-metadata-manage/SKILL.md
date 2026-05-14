@@ -9,6 +9,15 @@ Use this skill when the task involves **1C metadata structure** (creating, editi
 
 > **Recommendation.** For any change to metadata XML — prefer this skill (or the `metadata-manager` subagent) over hand-editing `Configuration.xml`, `Form.xml`, `Role.xml` and similar files. The PowerShell tools under `tools/` handle BOM, encodings, UUID regeneration, ChildObjects ordering and cross-references that are easy to break manually. Direct XML edits are acceptable only for unambiguous one-line fixes (e.g. correcting a synonym typo).
 
+## Path conventions
+
+PowerShell examples in this skill (`SKILL.md` and every `docs/*.md`) use the prefix `skills/1c-metadata-manage/tools/...`. That prefix is **relative to the active tool's skills directory**, not to the repository root:
+
+- After installation: the script lives under `<tool>/skills/1c-metadata-manage/tools/...` (e.g. `.cursor/skills/1c-metadata-manage/tools/...`, `.claude/skills/1c-metadata-manage/tools/...`, `.kilo/skills/1c-metadata-manage/tools/...`, `.ai-agent/skills/1c-metadata-manage/tools/...`). Active tools that load this skill resolve the prefix automatically.
+- In the `1c-rules` source repository (when editing the skill itself): the same script lives under `content/skills/1c-metadata-manage/tools/...`. Prepend `content/` when running the example outside of an installed project.
+
+The same convention applies to `docs/*.md` references like `skills/1c-metadata-manage/tools/1c-skd-info/modes-reference.md`.
+
 ## Dispatch Strategy
 
 Determine task complexity, then choose the execution mode:
@@ -19,7 +28,7 @@ Use when the task is a **single lightweight query**: checking metadata info, a q
 
 ### Subagent delegation — complex / mutation tasks
 
-Delegate to the **`/metadata-manager`** subagent (defined in `@agents/metadata-manager.md`) when **any** of the following is true:
+Delegate to the **`1c-metadata-manager`** subagent (defined in `content/agents/metadata-manager.md`, or in the installed agents directory for the active tool) when **any** of the following is true:
 
 - The task **creates, scaffolds, or compiles** metadata (objects, forms, SKD, MXL, roles, EPF, CF, CFE, databases)
 - The task **edits multiple files** or **spans multiple domains**

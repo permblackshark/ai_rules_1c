@@ -160,6 +160,6 @@ Exit code: 0 = OK, 1 = errors.
 
 ## SDD Integration
 
-When creating extensions as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating extensions as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Document borrowed objects, interceptors, and extension scope in spec deltas under `openspec/changes/`.

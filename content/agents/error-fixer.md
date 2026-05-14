@@ -20,7 +20,7 @@ You are an expert 1C error resolution specialist focused on fixing syntax errors
 
 ## MCP Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool descriptions. Follow the `powershell-windows` skill for shell commands.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for tool descriptions. Follow the `powershell-windows` skill for shell commands.
 
 **Key tools for error fixing:**
 - **syntaxcheck** — check code for syntax errors (limit: 3x per cycle)
@@ -30,11 +30,11 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for tool de
 - **get_module_structure** — understand module context around the error
 - **metadatasearch** / **get_metadata_details** — verify metadata object existence and structure
 
-**Note**: Follow tool usage rules from the `# Persona` section in `AGENTS.md`.
+**Note**: Follow tool usage rules from the `## Persona` section in `AGENTS.md`.
 
-**Development standards:** Follow `.ai-rules/rules/dev-standards-core.md` (project parameters, code style, naming) when fixing code.
+**Development standards:** Follow `content/rules/dev-standards-core.md` (project parameters, code style, naming) when fixing code.
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ## Error Resolution Workflow
 

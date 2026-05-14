@@ -4,11 +4,11 @@ Metadata and BSL code search, module navigation, forms, XSD schemas, XML validat
 
 > Load this file only if the `1c-code-metadata-mcp` server is actually available in the current session.
 
-## Empty-result retry rule
+## `grep=true` retry rule
 
-If a search tool from this server returns an empty result, **retry the same query with `grep=true`** before reformulating or falling back to another tool. The `grep=true` parameter switches the tool from hybrid / semantic / FTS mode to a plain substring search and often surfaces matches that the indexed search missed (rare identifiers, partial names, fragments inside strings or comments, freshly added code not yet reindexed).
+Use `grep=true` as a targeted substring retry **only after** indexed / semantic / exact search did not find enough and the query is likely to benefit from literal matching: exact identifier, query fragment, metadata path, event handler name, error text, or string literal.
 
-Applies to every tool on this server that exposes a `grep` parameter (notably `codesearch`, `metadatasearch`, `search_function`, `helpsearch`, `search_forms`). If a particular tool does not expose `grep`, skip this step for it and proceed with normal reformulation / fallback. Only after the `grep=true` retry also returns nothing should you reformulate the query, switch tool, or move further down the MCP fallback chain.
+Applies only to tools that expose a `grep` parameter: `codesearch`, `metadatasearch`, `search_function`, `helpsearch`, `search_forms`. If the query is conceptual or the first result is already sufficient, do not spend an extra call on `grep=true`.
 
 ## Metadata search
 

@@ -1,6 +1,5 @@
 ---
-description: "1C configuration extension (CFE) patterns — interceptor types, ПродолжитьВызов rules, change markers, adopted-object constraints"
-globs: ["**/Extensions/**/*.bsl", "**/Ext/**/*.bsl"]
+description: 1C configuration extension (CFE) patterns — interceptor types (`&Перед` / `&После` / `&ИзменениеИКонтроль`), `ПродолжитьВызов` rules, change markers, adopted-object constraints. Load when writing or reviewing extension code.
 alwaysApply: false
 category: architecture
 ---
@@ -11,7 +10,11 @@ BSL patterns for working with 1C configuration extensions.
 
 Applies to: extension code (`**/Extensions/**/*.bsl` and similar).
 
-Background reference: `dev-standards-architecture.md §2 "Extensions"` — modification priority, directives, placement rules. This file is the **practical** companion: interceptor types, `ПродолжитьВызов` semantics, markers, and adopted-object constraints.
+Background reference: `dev-standards-architecture.md §2` (Extensions) — modification priority, directives, placement rules. This file is the **practical** companion: interceptor types, `ПродолжитьВызов` semantics, markers, and adopted-object constraints.
+
+> **Naming convention used in examples.** Below, `Расш1_` / `МоеРасш_` denotes the **extension's own short alias** (set in the extension's properties — typically the `Имя` of the extension or an explicit alias), **not** `{PREFIX}` from `.dev.env`. `{PREFIX}` applies to new metadata objects and attributes; the extension alias applies to procedure / function names introduced by the extension and prevents name collisions between extensions. The two are independent: an extension can both add a new attribute `{PREFIX}Признак` to a typical object and define an interceptor procedure `Расш1_ПриЗаписи` in the same module.
+>
+> The alias itself MUST NOT contain the letter «ё» — see `dev-standards-core.md §6 → Typography`. Use `МоеРасш_`, `Расш1_`, `MyExt_` or any «ё»-free form.
 
 ---
 
@@ -82,10 +85,10 @@ Markers preserve diff/merge semantics when the base configuration is updated and
 
 ## Constraints on adopted (borrowed) objects
 
-- An adopted object (`ObjectBelonging=Adopted`) is a copy of metadata from the base configuration.
-- You **cannot** delete existing attributes / tabular sections of an adopted object.
+- An adopted object (`ObjectBelonging=Adopted`) is **not a copy** — it is a reference to a base-configuration object brought into the extension's scope so that the extension can attach interceptors and add its own attributes / tabular sections / form elements. The original definition still lives in the base configuration; on a base-configuration update the adopted object is automatically re-read, and the extension is re-applied on top of it.
+- You **cannot** delete existing attributes / tabular sections of an adopted object — they belong to the base configuration.
 - You **can** add your own attributes / tabular sections (with `{PREFIX}` from `.dev.env`).
-- Modules of adopted objects — interceptors only, no direct edits.
+- Modules of adopted objects — interceptors only (`&Перед` / `&После` / `&ИзменениеИКонтроль`), no direct edits to the original procedure body.
 - Forms of adopted objects — you can add elements, you cannot delete existing ones.
 
 ---
@@ -125,7 +128,7 @@ Markers preserve diff/merge semantics when the base configuration is updated and
 Процедура ДополнительнаяПроверка()
 
 // Good: extension prefix
-Процедура МоёРасш_ДополнительнаяПроверка()
+Процедура МоеРасш_ДополнительнаяПроверка()
 ```
 
 ---

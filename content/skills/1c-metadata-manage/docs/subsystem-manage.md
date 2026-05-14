@@ -137,6 +137,6 @@ Exit code: 0 = OK, 1 = errors.
 
 ## SDD Integration
 
-When creating or modifying subsystems as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating or modifying subsystems as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Add spec deltas describing subsystem purpose and included objects in `openspec/changes/`.

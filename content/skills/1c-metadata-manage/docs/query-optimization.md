@@ -1,6 +1,6 @@
 # 1C Query Optimization Skill (Advanced Patterns)
 
-For basic query rules (formatting, aliases, parameters, no queries in loops) — see `dev-standards-architecture.md §3 "Queries"`.
+For basic query rules (formatting, aliases, parameters, no queries in loops) — see `dev-standards-architecture.md §3 → "Queries"`.
 For anti-patterns with examples (query in loop, subquery in SELECT, virtual table filter in WHERE, missing TOP N) — see the `anti-patterns` rule.
 
 ## When to Use

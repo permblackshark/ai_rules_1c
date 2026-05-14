@@ -1,12 +1,12 @@
 ---
-description: when adding event hooks to a 1C form
-globs: "**/Form.Module.bsl"
+description: Wiring up form event handlers (`ПриОткрытии`, `ПриИзменении`, …) — pair the procedure in `Form.Module.bsl` with the `<Event>` entry in `Form.xml`. Load from `forms.md` when adding event hooks.
 alwaysApply: false
 category: forms
 ---
 
-# **IMPORTANT!** — don't forget to add the event hook to the form XML file.
-The file is usually named `Form.xml` in the parent directory of the module code.
+# Adding Form Event Handlers
+
+> **IMPORTANT.** Don't forget to add the event hook to the form XML file. The file is usually named `Form.xml` in the parent directory of the module code.
 
 Event hooks in XML look like:
 

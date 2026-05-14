@@ -1,6 +1,5 @@
 ---
-description: "Reserved property names in 1C form modules — ban on using standard form-element property names as local variables"
-globs: ["**/Form.Module.bsl", "**/Form/**/*.bsl"]
+description: Reserved property names in 1C form modules — ban on using standard form-element property names as local variables. Load from `forms.md` whenever editing server-side form-module code.
 alwaysApply: false
 category: forms
 ---

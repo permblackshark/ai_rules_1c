@@ -19,4 +19,4 @@ BSL syntax and style validation via BSL Language Server.
 - Each new edit of the module starts a new cycle.
 - The same limit (3 calls) applies to `check_1c_code` and `review_1c_code` from `1c-code-check-mcp`.
 - Once the limit is hit — fix the substantive errors and move on; style warnings after the limit do not block delivery.
-- It only makes sense to re-run `syntaxcheck` after an actual code edit — re-runs without changes are forbidden (see `AGENTS.md → Tool Calling Rules`).
+- It only makes sense to re-run `syntaxcheck` after an actual code edit — re-runs without changes are forbidden (see `AGENTS.md → MCP Tool Calling`).

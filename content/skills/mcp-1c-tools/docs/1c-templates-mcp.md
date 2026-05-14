@@ -1,6 +1,6 @@
 # 1c-templates-mcp — tool catalog
 
-Code template library (`templatesearch`) and project vector memory (`remember` / `recall`). Memory routing rules — `AGENTS.md → Project Memory`.
+Code template library (`templatesearch`) and project vector memory (`remember` / `recall`). Memory routing rules live in `AGENTS.md → Project memory`.
 
 > Load this file only if the `1c-templates-mcp` server is actually available in the current session.
 
@@ -12,11 +12,11 @@ Code template library (`templatesearch`) and project vector memory (`remember` /
 
 ## Notes on `remember`
 
-- Write in Russian, one self-contained fact per note, including the affected object / module.
+- Write in English, one self-contained fact per note, preserving original 1C identifiers and affected object / module names as-is.
 - Do not save secrets or PII.
 - Call `remember` proactively: when the user corrects you, clarifies a non-obvious detail, or adjusts your interpretation of the task.
 - Call `recall` at the start of any non-trivial task with key terms (object name, subsystem, error message).
 
 ## Availability check
 
-Treat the server as **available** only if the `remember` and `recall` tools are actually present in the current session's tool schema. The mere presence of `1c-templates-mcp` in `mcp-servers.json` does not prove availability. If `recall` returns a connection error — switch to memory fallback mode (see `AGENTS.md → Project Memory → Fallback`).
+Treat the server as **available** only if the `remember` and `recall` tools are actually present in the current session's tool schema. The mere presence of `1c-templates-mcp` in `mcp-servers.json` does not prove availability. If `recall` returns a connection error — switch to memory fallback mode (see `AGENTS.md → Project memory → Availability`).

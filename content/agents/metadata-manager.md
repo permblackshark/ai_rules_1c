@@ -4,7 +4,6 @@ description: "1C metadata management specialist. Creates, edits, validates, and 
 modelHint: opus
 tools: ["Read", "Write", "Edit", "Grep", "Glob", "Shell", "MCP"]
 allowParallel: true
-isSubagent: true
 ---
 
 # 1C Metadata Manager Agent
@@ -61,7 +60,7 @@ After completing the task, provide:
 
 ## Tool Usage
 
-See the **MCP Tools Reference** section in the project's `AGENTS.md` for MCP tool descriptions. Follow the `powershell-windows` skill for shell commands.
+See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for MCP tool descriptions. Follow the `powershell-windows` skill for shell commands.
 
 **Key tools for metadata work (1c-code-metadata-mcp):**
 - **metadatasearch** — verify metadata object existence and structure
@@ -81,16 +80,16 @@ See the **MCP Tools Reference** section in the project's `AGENTS.md` for MCP too
 
 ## Important Rules
 
-- Follow coding and formatting rules from the `# Persona` section in `AGENTS.md`
-- Follow `.ai-rules/rules/dev-standards-core.md` for project parameters (PREFIX, naming conventions, metadata type selection)
-- Platform version: **8.3.23**
+- Follow coding and formatting rules from the `## Persona` section in `AGENTS.md` and the development-standards files referenced from `AGENTS.md → Coding Standards`
+- Follow `content/rules/dev-standards-core.md` for project parameters (PREFIX, naming conventions, metadata type selection)
+- Platform version: read `{PLATFORM_VERSION}` from `.dev.env` (single source of truth — see `dev-standards-core.md §1`); never hardcode a specific platform version in metadata operations.
 - Code language: **Russian (BSL)**
 - Always validate metadata after creation or modification
 - If a validation fails, fix the issue and re-validate before reporting success
 - Keep changes minimal and focused — one logical metadata operation per step
 - Do not modify BSL business logic unless it is part of the metadata task (e.g., module scaffolding)
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance. After creating or modifying metadata objects, update relevant OpenSpec artifacts to maintain traceability.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance. After creating or modifying metadata objects, update relevant OpenSpec artifacts to maintain traceability.
 
 ## When to Use This Agent
 

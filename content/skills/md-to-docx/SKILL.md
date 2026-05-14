@@ -27,18 +27,20 @@ If the path is not provided — ask the user.
 
 ## Command
 
+`<skill-dir>` below is the directory of this skill: `content/skills/md-to-docx/` in the `1c-rules` source repo, or `<tool>/skills/md-to-docx/` after installation (e.g. `.cursor/skills/md-to-docx/`, `.claude/skills/md-to-docx/`).
+
 PowerShell (Windows, default for this project):
 
 ```powershell
 $env:NODE_PATH = (npm root -g)
-node skills/md-to-docx/scripts/md_to_docx.js "<input.md>" "[output.docx]"
+node <skill-dir>/scripts/md_to_docx.js "<input.md>" "[output.docx]"
 ```
 
 Bash (macOS / Linux):
 
 ```bash
 NODE_MODULES=$(npm root -g)
-NODE_PATH="$NODE_MODULES" node skills/md-to-docx/scripts/md_to_docx.js "<input.md>" "[output.docx]"
+NODE_PATH="$NODE_MODULES" node <skill-dir>/scripts/md_to_docx.js "<input.md>" "[output.docx]"
 ```
 
 ## Supported Markdown features

@@ -1,6 +1,5 @@
 ---
-description: "1C asynchronous methods (Асинх / Ждать / Обещание) — patterns and pitfalls for platform 8.3.18+"
-globs: ["**/*.bsl", "**/*.os"]
+description: 1C asynchronous methods (`Асинх` / `Ждать` / `Обещание`) — patterns and pitfalls for platform 8.3.18+. Load when writing or reviewing client-side async code.
 alwaysApply: false
 category: forms
 ---
@@ -11,7 +10,7 @@ Rules for using the asynchronous mechanism introduced in platform 8.3.18+.
 
 Applies to: client-side code with asynchronous calls (`&НаКлиенте`).
 
-Authoritative reference: dev-standards-architecture.md §3 — Async and Modality. This file gives the practical patterns and the pitfalls.
+Authoritative reference: `dev-standards-architecture.md §3 → "Async and Modality"`. This file gives the practical patterns and the pitfalls.
 
 ---
 

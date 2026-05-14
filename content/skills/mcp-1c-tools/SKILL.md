@@ -5,11 +5,13 @@ description: "Catalog of MCP servers for 1C development — search, code navigat
 
 # MCP tools for 1C — dispatcher
 
-This skill is the single entry point into the project's catalog of MCP servers. Detailed per-tool descriptions for each server live in separate files under `docs/`. **Load a specific `docs/<server>.md` when you are about to call tools from that server and want to tune parameters; the server must be actually available in the current session** (its tools are exposed in the tool schema; the mere presence of an entry in `mcp-servers.json` does not count as availability).
+This skill is the single source of truth for the project's MCP server catalog, task→tool mapping, fallback order, and project-index search retries. Detailed per-tool descriptions for each server live in separate files under `docs/`. **Load a specific `docs/<server>.md` when you are about to call tools from that server and want to tune parameters; the server must be actually available in the current session** (its tools are exposed in the tool schema; the mere presence of an entry in `mcp-servers.json` does not count as availability).
 
-## What is mandatory vs. recommended
+## What is mandatory vs. conditional
 
-- **Mandatory: calling the MCP tool when it is needed.** If the task could benefit from an MCP tool and the server is exposed in the current session, calling it is non-optional. Not calling counts as a defect. See `AGENTS.md → Tool Calling Rules § A`.
+- **Mandatory for risk-bearing 1C work.** If a relevant server is exposed, call the fitting MCP tool for BSL / metadata edits or review, metadata XML, forms, integrations, refactoring, performance, runtime errors, platform API checks, impact analysis, syntax / quality validation, and project-memory operations.
+- **Conditional for external knowledge.** Use platform docs, БСП / SSL, and ITS MCP tools when the task depends on versioned platform behavior, reusable БСП APIs, or standards compliance. Do not call them for generic prose cleanup or rule-file editing unless such a fact is actually needed.
+- **Not required for Markdown / rules / documentation-only work.** For rule files, README, commands documentation, and similar prose-only edits, validate structure, links, paths, and internal consistency instead of calling 1C project MCP tools.
 - **Recommended: reading `docs/<server>.md` before parameter-rich calls.** Reading the schema is for parameter tuning, not a hard gate. Skipping it is acceptable only when the call is genuinely simple (a one-shot lookup with obvious arguments) and you are not invoking a parameter-rich tool listed below.
 
 ### Parameter-rich tools — read the doc first
@@ -28,7 +30,7 @@ If `docs/<server>.md` conflicts with the descriptor exposed by the current envir
 - For ITS standards (`its_help` → `fetch_its`) and platform documentation (`docinfo` / `docsearch`).
 - For code templates and project memory (`templatesearch`, `remember`, `recall`).
 
-> Short tool-calling rules (priority, limits, no-duplicate-call discipline) — in `AGENTS.md → Tool Calling Rules`. This skill holds the catalog and per-server schemas.
+> Short obligation rules and verification budgets live in `AGENTS.md → MCP Tool Calling` (sections A, B, C). This skill owns the MCP catalog, routing, and fallback details.
 
 ## Server catalog
 
@@ -44,15 +46,26 @@ If `docs/<server>.md` conflicts with the descriptor exposed by the current envir
 
 ## Fallback chain (highest priority to lowest)
 
-Before falling back to `Grep` / `rg`, **exhaust applicable MCP tools in this strict order**:
+Use only the applicable branch; stop as soon as the collected evidence is sufficient. Before each call, check that it closes a concrete context gap and is not a duplicate of an earlier call.
 
-1. `1c-graph-metadata-mcp`
-2. `1c-code-metadata-mcp`
-3. `1c-templates-mcp`
-4. `1c-ssl-mcp`
-5. `1C-docs-mcp`
-6. `1c-code-check-mcp` (`its_help` → `fetch_its` for ITS standards)
-7. only then `Grep` / `rg` — with a mandatory short note in the response listing which MCP tools were tried and why they did not return what was needed.
+### Project-source search before `Grep` / `rg`
+
+`Grep` / `rg` substitute only the project-indexing layer. Before falling back to them for 1C project-source search, exhaust:
+
+1. `1c-graph-metadata-mcp` — `search_code`, `search_metadata`, `search_metadata_by_description`, `get_object_dossier`, `trace_impact`, `trace_call_chain` as appropriate.
+2. `1c-code-metadata-mcp` — default indexed search / navigation (`codesearch`, `metadatasearch`, `search_function`, `search_forms`, `get_module_structure`, etc.).
+3. `1c-code-metadata-mcp` with `grep=true` — substring retry inside the MCP index **only after** indexed / semantic / exact search did not find enough and only for tools that expose the parameter: `codesearch`, `metadatasearch`, `search_function`, `helpsearch`, `search_forms`. Typical scenarios: exact identifier, fragment of a query, metadata path, event handler name, error text, or literal string where semantic search is likely to miss.
+4. Only then `Grep` / `rg` — with a mandatory short note in the response listing which project-index MCP attempts were tried and why they did not return what was needed.
+
+### External knowledge
+
+These servers have no `Grep` / `rg` equivalent; call them only when their knowledge is needed:
+
+1. `1c-templates-mcp` — code templates and project memory (`templatesearch`, `remember`, `recall`).
+2. `1c-ssl-mcp` — БСП / SSL reusable APIs and patterns.
+3. `1C-docs-mcp` — versioned platform documentation.
+4. `1c-code-check-mcp` — 1С:Напарник checks, ITS standards (`its_help` → `fetch_its` for every document used), AI drafts.
+5. `1c-syntax-checker-mcp` — BSL syntax / style validation after edits.
 
 ## Quick map: "task → MCP tool"
 
@@ -66,4 +79,4 @@ Before falling back to `Grep` / `rg`, **exhaust applicable MCP tools in this str
 | Object usage search | `find_objects_using_object` / `find_usages_of_object` | `graph_dependencies` (`direction="reverse"`) |
 | Description / synonym / comment search | `search_metadata_by_description` | `metadatasearch` (`names_only=true`) |
 
-Step-by-step playbooks per task type (writing code, review, architecture, error fixing, performance, refactoring, metadata XML, forms, integrations, documentation, comparing platform versions) — `tooling-playbooks.md`.
+Step-by-step playbooks per task type (writing code, review, architecture, error fixing, performance, refactoring, metadata XML, forms, integrations, documentation, comparing platform versions) — `content/rules/tooling-playbooks.md`.

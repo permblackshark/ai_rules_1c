@@ -61,18 +61,24 @@ Use this lean sequence:
 
 8. **Scaffold OpenSpec.** Copy `openspec/` into the project in skip-if-exists mode (no overwrites).
 
-9. **Write the manifest** `.ai-rules.json` at the project root: list all placed files with their content sources, the active tools, the source version (`git describe --tags --always` from the clone), the protocol version (`1.0`), the `rulesDir` chosen for AGENTS.md substitution, and any detected foreign user-authored files under `foreignFiles`.
+9. **Write the manifest** `.ai-rules.json` at the project root: list all placed files with their content sources, the active tools, the source version (`git describe --tags --always` from the clone), the protocol version (`1.0`), the canonical rules directory used for diagnostics / updates, and any detected foreign user-authored files under `foreignFiles`.
 
 ### Always-on layer placement
 
 `AGENTS.md`, `USER-RULES.md`, and `memory.md` always live at the **project root**. This is required: every supported tool (Cursor, Claude Code, Codex, OpenCode, Kilo Code) reads `AGENTS.md` from the project root as its always-on context. Placing them under `.cursor/`, `.claude/` etc. would prevent the tools from picking them up.
 
-`AGENTS.md` placement is a render-then-write step:
+`AGENTS.md` placement is a readable-copy step with deterministic path rewriting:
 
-1. Read the source `AGENTS.md` from the clone — it is a **template** that contains the placeholders `{{ rulesDir }}` and `{{ rulesExt }}` wherever it references on-demand rule files.
-2. Resolve the **canonical rules layout** for this install: pick the first active tool from the priority order `cursor → claude-code → kilocode → opencode → codex` whose adapter defines `rules.copyTo`. Split the value (e.g. `.cursor/rules/{name}.mdc`) into the directory part (`.cursor/rules`) and the extension (`mdc`).
-3. Replace every occurrence of `{{ rulesDir }}` with the directory and `{{ rulesExt }}` with the extension.
-4. Write the rendered text to the project root as `AGENTS.md`. Refresh on update only if the local file is unmodified since the previous installer write (manifest hash matches) — preserve user edits otherwise.
+1. Read the source `AGENTS.md` from the clone. It is maintained as a human-readable source document with explicit source-repository paths (`content/rules/<name>.md`, `content/agents/<name>.md`, `content/commands/<name>.md`, `content/skills/<rest>`), not as an opaque placeholder-heavy template.
+2. Resolve the **canonical artefact layout** per section. For each of `rules`, `agents`, `commands`, `skills`, walk the priority order `cursor → claude-code → kilocode → opencode → codex → other` and pick the first active tool whose adapter declares `<section>.copyTo`. The result is, per section, a `(directory, extension)` pair derived by stripping `{name}...` from the `copyTo` template. Record the canonical rules directory in `.ai-rules.json` for diagnostics and update logic; the other sections are recomputed on every refresh from the active tool set.
+3. Rewrite the source text by substituting `content/<section>/...` paths with the per-section canonical installed paths so every path in the file resolves to an existing project-local file:
+   - `content/rules/<name>.md` → `<rulesDir>/<name>.<rulesExt>` (e.g. `.cursor/rules/<name>.mdc`, `.claude/rules/<name>.md`).
+   - `content/agents/<name>.md` → `<agentsDir>/<name>.<agentsExt>` (e.g. `.codex/agents/<name>.toml` when Codex is canonical).
+   - `content/commands/<name>.md` → `<commandsDir>/<name>.<commandsExt>` (Codex commands resolve to `~/.codex/prompts/<name>.md` when Codex is the only active tool).
+   - `content/skills/<rest>` → `<skillsDir>/<rest>` — skills are copied verbatim, so any subpath after `content/skills/` (`SKILL.md`, `docs/<file>.md`, `tools/...`) is preserved untouched.
+   - The name regex matches both real names and prose placeholders like `<name>`, so illustrative paths in the body are also rewritten consistently.
+4. Write the rewritten text to the project root as `AGENTS.md`. Refresh on update only if the local file is unmodified since the previous installer write (manifest hash matches) — preserve user edits otherwise.
+5. If no active tool defines a rules directory (degenerate install set), skip the rewriting step and warn — the source paths are kept as-is so the file at least documents the intended layout.
 
 `USER-RULES.md` and `memory.md` are created from the templates on first install and **never** overwritten thereafter.
 
@@ -91,7 +97,7 @@ Bootstrap procedure:
 4. In non-interactive mode (`-NonInteractive` / agent without ability to ask) — leave non-detected critical fields empty and emit a clear WARNING listing them. Do not block installation.
 5. Write the file to the project root and record it in `.ai-rules.json` with `template: true` so the file is never overwritten by subsequent updates.
 
-The legacy `infobasesettings.md` file (used by earlier versions of `/loadfrom1cbase`, `/update1cbase`, `/deploy-and-test`, `1c-tester`) is no longer supported. If you find it during install, leave it as a foreign file but do not migrate values automatically — instruct the user to copy them into `.dev.env` (key names match) and delete the old file.
+The legacy `infobasesettings.md` file (used by earlier versions of `/loadfrom1cbase`, `/update1cbase`, `/deploy-and-test`, `1c-tester`) is no longer supported. If you find it during install or update, migrate its values into `.dev.env` (key names match; convert markdown/list entries to `KEY=value`), preserve any existing `.dev.env` values unless the legacy value fills an empty key, and delete `infobasesettings.md` only after a successful migration.
 
 ### Update / add / remove
 
@@ -105,7 +111,7 @@ If a target file already exists with user modifications (different from any prio
 
 ### Important constraints
 
-- **Do not edit `AGENTS.md` directly** in the project — it is regenerated on every update from the source template plus the resolved `{{ rulesDir }}`.
+- **Do not edit `AGENTS.md` directly** in the project — it is refreshed on every update from the source `AGENTS.md` when safe.
 - **Do not modify `USER-RULES.md` or `memory.md`** outside the migration markers — they belong to the user/project.
 - **Manifest is authoritative** — if `.ai-rules.json` exists, trust it for "what is currently managed". A file not in the manifest is a foreign file: record it under `foreignFiles`, do not touch it.
 - **Skip-if-exists for OpenSpec** — never overwrite specs or change proposals.
@@ -121,7 +127,7 @@ git clone https://github.com/comol/ai_rules_1c.git $env:TEMP\1c-rules
 
 The script implements the protocol above. Notes:
 
-- `-Source` accepts only an **existing local path** — not a URL. Clone first.
+- `-Source` accepts a local path or a Git source URL (`https://...`, `git@...`, or a value ending with `.git`). URL sources are cloned into the installer's cache before placement.
 - Run from the **project root**; the script writes there.
 - Commands: `init` / `update` / `add <tool>` / `remove [<tool>]` / `doctor` (read-only diagnostic) / `eject` (delete the manifest, leave files in place).
 - Flags: `-Tools cursor,claude-code` (explicit list), `-NonInteractive` (auto-resolve prompts), `-AssumeYes` (answer yes to confirmations but still pause on destructive conflicts unless `-NonInteractive` is also set).
@@ -136,7 +142,7 @@ iex (irm https://raw.githubusercontent.com/comol/ai_rules_1c/main/install.ps1)
 iex "$(irm https://raw.githubusercontent.com/comol/ai_rules_1c/main/install.ps1) init"
 ```
 
-Always clone first and run the script as a file (the canonical form shown above). If a no-`git` environment forces a one-liner, use a script block — it preserves `param(...)` semantics — but still requires a local clone for `-Source`:
+Always run the script as a local file. If a no-`git` environment forces a one-liner, use a script block — it preserves `param(...)` semantics — but the script still needs a resolvable `-Source` value:
 
 ```powershell
 $tmp = Join-Path $env:TEMP '1c-rules'
@@ -144,16 +150,16 @@ git clone https://github.com/comol/ai_rules_1c.git $tmp
 & ([scriptblock]::Create((Get-Content "$tmp\install.ps1" -Raw))) init -Source $tmp
 ```
 
-There is no supported way to run `install.ps1` directly from the GitHub URL without a local clone — the script reads `content/` and `adapters/` from `-Source`.
+Do not execute raw script text from GitHub with `Invoke-Expression`; download or clone the repository first so `install.ps1` can read `content/` and `adapters/`.
 
 ## File ownership
 
-- `AGENTS.md` — rendered from the source template by substituting `{{ rulesDir }}` with the canonical rules directory of the active tool set; refreshed on every update when safe. **Do not edit it directly** — your edits will be overwritten on the next update.
+- `AGENTS.md` — copied from the readable source `AGENTS.md` with per-section path rewriting (see *Always-on layer placement* above) and refreshed on every update when safe. The shipped file points at `content/<section>/...` paths in the source repo; the installed file in the project root points at the active tool's installed paths (e.g. `.cursor/rules/...mdc`, `.claude/skills/...`, `.kilo/agents/...`) so every link resolves to an existing project-local file. **Do not edit it directly** — your edits may be overwritten on the next update if the file is still installer-managed and unmodified.
 - `USER-RULES.md` — created empty by the installer on first install and **never** overwritten thereafter. Project- or team-specific conventions go here.
 - `memory.md` — project memory file at the project root. Created on first install and not overwritten by the installer.
 - `.dev.env` — single source of truth for project parameters (code generation + infobase connection + web-publish URL for tests). Created on first install with auto-detected values where possible (PLATFORM_VERSION, PLATFORM_PATH, PREFIX) and prompts for the rest in interactive mode. **Never** overwritten by the installer; gitignored by default.
 - On-demand rule files — placed under each active tool's `rules.copyTo` directory (`.cursor/rules/*.mdc`, `.claude/rules/*.md`, `.kilo/rules/*.md`, `.codex/rules/*.md`, `.opencode/rules/*.md`, `.ai-agent/rules/*.md` for `other`). All copies contain the same authoritative text; per-tool frontmatter differs (e.g. Cursor keeps `globs`/`alwaysApply`; `other` keeps only the minimum portable subset `description` + `alwaysApply`). `AGENTS.md` references one canonical directory — the highest-priority active tool's. Other active tools' rules dirs are still populated so that tool-native auto-loading (Cursor's `.cursor/rules/*.mdc` indexing) keeps working.
-- `content/agents/<name>.md` — full role descriptions and prompts for the 13 specialized subagents. Each AI tool discovers them from its own agents directory after install.
+- `content/agents/*.md` — full role descriptions and prompts for the 13 specialized subagents. Source file names use short names such as `developer.md` / `explorer.md`; the installed agent id is defined by each file's frontmatter. Each AI tool discovers them from its own agents directory after install.
 
 ## USER-RULES.md
 
@@ -184,3 +190,5 @@ Earlier versions of `1c-rules` created a shared `.ai-rules/rules/` mirror at the
 The project ships an [OpenSpec](https://github.com/Fission-AI/OpenSpec) workspace at the repository root. The `1c-rules` installer scaffolds it unconditionally on first install (skip-if-exists; existing files are never overwritten) and records the result in `.ai-rules.json` under `integrations.openspec`.
 
 OpenSpec slash commands (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`, `/opsx:explore`) and the matching SKILLs are placed automatically by the `1c-rules` installer for every active tool from a bundled snapshot of `openspec init` output (see `content/openspec-bundle/`); no `npm` and no OpenSpec CLI are required at install time. The snapshot's CLI version is recorded in `.ai-rules.json` under `integrations.openspec.artifactsBundleVersion` and is refreshed whenever `1c-rules` is updated.
+
+Bundles are shipped for `cursor`, `claude-code`, `codex`, `opencode`, `kilocode`. The `other` adapter (universal fallback) has no OpenSpec bundle — its users continue to read `openspec/specs/` and `openspec/changes/` directly and invoke OpenSpec workflows manually, without project-rendered slash commands. This is recorded in `.ai-rules.json` under `integrations.openspec.bundleSkipped` for transparency.

@@ -39,7 +39,7 @@ powershell.exe -NoProfile -File skills/1c-metadata-manage/tools/1c-cf-manage/scr
 | `remove-defaultRole` | `Role.Name` or `Name` | Remove default role |
 | `set-defaultRoles` | Names via `;;` | Replace default roles list |
 
-Full property reference: [cf-edit-reference.md](skills/1c-metadata-manage/tools/1c-cf-manage/cf-edit-reference.md).
+Full property reference: [cf-edit-reference.md](../tools/1c-cf-manage/cf-edit-reference.md).
 
 ### Examples
 
@@ -117,6 +117,6 @@ Exit code: 0 = OK, 1 = errors.
 
 ## SDD Integration
 
-When creating a new configuration as part of a project, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating a new configuration as part of a project, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Create initial specs in `openspec/specs/` describing configuration purpose, compatibility, and scope.

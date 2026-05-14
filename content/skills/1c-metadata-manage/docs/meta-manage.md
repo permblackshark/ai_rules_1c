@@ -36,7 +36,7 @@ Constant, DefinedType, CommonModule, ScheduledJob, EventSubscription, DocumentJo
 
 ## JSON DSL — Quick Reference
 
-Full specification: `docs/meta-dsl-spec.md`.
+Full specification is split across three reference files in `tools/1c-meta-edit/`: [`json-dsl.md`](../tools/1c-meta-edit/json-dsl.md) (combined operations, key/type synonyms, supported object table), [`properties-reference.md`](../tools/1c-meta-edit/properties-reference.md) (object property operations), and [`child-operations.md`](../tools/1c-meta-edit/child-operations.md) (child-element operations).
 
 ### Root Structure
 
@@ -209,7 +209,7 @@ powershell.exe -NoProfile -File skills/1c-metadata-manage/tools/1c-meta-edit/scr
 
 Batch via `;;` in all operations. Detailed syntax in linked reference files.
 
-### Child Elements — [child-operations.md](skills/1c-metadata-manage/tools/1c-meta-edit/child-operations.md)
+### Child Elements — [child-operations.md](../tools/1c-meta-edit/child-operations.md)
 
 | Operation | Value Format | Example |
 |-----------|-------------|---------|
@@ -229,7 +229,7 @@ Batch via `;;` in all operations. Detailed syntax in linked reference files.
 
 Positional insert: `"Склад: CatalogRef.Склады >> after Организация"`.
 
-### Object Properties — [properties-reference.md](skills/1c-metadata-manage/tools/1c-meta-edit/properties-reference.md)
+### Object Properties — [properties-reference.md](../tools/1c-meta-edit/properties-reference.md)
 
 | Operation | Value Format | Example |
 |-----------|-------------|---------|
@@ -241,7 +241,7 @@ Positional insert: `"Склад: CatalogRef.Склады >> after Организ
 | `set-owners` / `set-registerRecords` / `set-basedOn` / `set-inputByString` | Replace entire list | `"Catalog.Орг ;; Catalog.Контр"` |
 | `remove-owner` / `remove-registerRecord` / ... | Remove from list | `"Catalog.Контрагенты"` |
 
-### JSON DSL — [json-dsl.md](skills/1c-metadata-manage/tools/1c-meta-edit/json-dsl.md)
+### JSON DSL — [json-dsl.md](../tools/1c-meta-edit/json-dsl.md)
 
 For combined operations (add + remove + modify in one file), key/type synonyms, supported object table.
 
@@ -508,6 +508,6 @@ Exit code: 0 = all checks passed, 1 = errors found.
 
 ## SDD Integration
 
-When creating or modifying configuration objects as part of a larger feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating or modifying configuration objects as part of a larger feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Add or update spec deltas in `openspec/changes/<change-id>/specs/` describing the new object, its attributes, and purpose.

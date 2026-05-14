@@ -3,7 +3,8 @@
 # Describes how to copy and adapt files from content/ for OpenCode CLI.
 # Read by both installation channels (AI-agent installer and install.ps1).
 #
-# Schema: see ARCHITECTURE.md §7 and §7.1 (closed operation set).
+# Schema: closed adapter schema described in AGENT-INSTALL.md (Lean placement)
+# and implemented by install.ps1.
 # Notes:
 #   - OpenCode distinguishes primary agents from subagents via a `mode` field.
 #     We set `mode: subagent` when source has `isSubagent: true`,

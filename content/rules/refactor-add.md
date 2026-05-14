@@ -1,21 +1,39 @@
 ---
-description: when doing refactoring
+description: Safe-refactoring checklist and sequencing — top-down analysis, bottom-up edits, mandatory pre-refactor impact analysis. Load whenever the task is a refactoring.
 alwaysApply: false
 category: development
 ---
-When refactoring, I use a hybrid approach. First, I conduct a top-down analysis to understand the business logic, for which I explicitly map out the entire chain of calls and trace the data flow. Then I move on to bottom-up refactoring, starting with the lowest-level utility functions. Finally, I integrate the updated components into the high-level procedures.
 
-## Refactoring with MCP Tools (priority: graph → code-metadata → Grep)
+# Safe Refactoring — Methodology
 
-Follow this sequence, using graph tools first and code-metadata as fallback:
+Refactoring is high-risk because the user-visible behaviour must stay identical while the code shape changes. Use the hybrid approach below.
 
-1. **get_object_dossier** — first step: get a comprehensive structural passport of the object being refactored (structure, forms, dependencies, code modules, roles)
-2. **trace_impact** → **graph_dependencies** (`direction="downstream"`) — analyze what breaks if the object changes. Use `depth=3–5` for metadata relationships, `depth=5–10` for CALLS chains. Filter with `relationship_types` if needed
-3. **trace_call_chain** → **get_method_call_hierarchy** (`direction="callers"`) — find all callers of the refactored routine. Use `object_name` to disambiguate when multiple routines share the same name
-4. **find_objects_using_object** / **find_usages_of_object** — find all type references to the object before renaming, removing, or changing its type structure
-5. **search_code** → **codesearch** — find all code patterns related to the refactored object. Use `search_type="fulltext"` for exact name matches, `search_type="semantic"` for finding code by purpose
-6. **find_register_movement_docs** — if refactoring a register, find all documents that post movements to it
+## Sequencing
 
-After refactoring:
-- **search_code** (`detail_level="L3"`, high `top_k`) → **codesearch** — verify no remaining references to the old names/patterns
-- **check_1c_code** + **review_1c_code** — validate refactored code quality
+1. **Top-down analysis first.** Map the entire chain of calls and data flow for the area you intend to change. Do not start editing until you can answer: what are the entry points, who calls what, what registers / metadata are touched, what is the observable behaviour.
+2. **Bottom-up edits.** Start with the lowest-level utility functions and work upward. Higher-level callers integrate the refactored helpers only after the helpers themselves are clean and verified.
+3. **No "while we're here" edits.** Out-of-scope cleanup belongs to a separate, explicit task — see `AGENTS.md → Surgical Changes`.
+
+## Pre-refactor impact analysis (mandatory)
+
+Run the full sequence from `tooling-playbooks.md → Refactoring` before touching the first line:
+
+- `get_object_dossier` — passport of the object being refactored.
+- `trace_impact` → fallback `graph_dependencies` (`direction="downstream"`) — what breaks on change.
+- `trace_call_chain` → fallback `get_method_call_hierarchy` (`direction="callers"`) — every caller of the routine.
+- `find_objects_using_object` / `find_usages_of_object` — every type reference before renaming / removing / changing structure.
+- For registers — `find_register_movement_docs` — every document that posts movements there.
+
+If the impact-analysis MCPs are not exposed in the session, follow the graceful-degradation procedure from `verification-checklist.md → Gate 4` — do not refactor blind.
+
+## Post-refactor verification
+
+- `search_code` (`detail_level="L3"`, high `top_k`) → fallback `codesearch` — confirm no remaining references to the old names / patterns.
+- Full closing gate — `verification-checklist.md` (every gate, no skipping).
+- If the refactor is large enough to enter the subagent pipeline — `subagent-pipeline.md → Stage 3` (delegate to `1c-refactoring`).
+
+## What this file is **not**
+
+- Not a tool catalogue — that lives in `tooling-playbooks.md → Refactoring`.
+- Not a list of anti-patterns to fix — that lives in `anti-patterns.md`.
+- Not an architectural guide — that lives in `dev-standards-architecture.md` and the `1c-architect` subagent.

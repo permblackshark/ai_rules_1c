@@ -315,6 +315,6 @@ Exit code: 0 = all checks passed, 1 = errors found.
 
 ## SDD Integration
 
-When creating external processors or reports as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When creating external processors or reports as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Add spec deltas describing the processor/report purpose, parameters, and target objects in `openspec/changes/`.

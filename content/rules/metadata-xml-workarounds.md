@@ -1,6 +1,5 @@
 ---
-description: "Common XML generation pitfalls for 1C metadata and managed forms (TabularSection LineNumber, Pages group ext-info, UID uniqueness)"
-globs: ["**/*.mdo", "**/Form.xml", "**/*.form", "**/Configuration.xml"]
+description: Common XML generation pitfalls for 1C metadata and managed forms (`TabularSection` `LineNumber`, `PagesGroupExtInfo` typo, `Page.enabled`, UID uniqueness, post-edit validation). Load when authoring or fixing metadata XML or `Form.xml` by hand.
 alwaysApply: false
 category: metadata
 ---
@@ -9,7 +8,7 @@ category: metadata
 
 Concrete recurring mistakes when generating or editing 1C metadata XML / MDO and managed-form XML by hand or with scripts. Apply when authoring metadata XML directly (rather than via the `1c-metadata-manage` skill).
 
-> Strong preference: use `1c-metadata-manage` (skill) or `metadata-manager` (subagent) to mutate metadata XML. The cases below are for reviewing or fixing existing files.
+> Strong preference: use the `1c-metadata-manage` skill or the `1c-metadata-manager` subagent (see `content/agents/metadata-manager.md`) to mutate metadata XML. The cases below are for reviewing or fixing existing files.
 
 ---
 
@@ -29,7 +28,7 @@ Tabular sections (`табличные части`) **must not** contain a `<stan
 </standardAttributes>
 ```
 
-The same rule applies to MDO (EDT format) — see `1c-mdo-integrity` content if working with `*.mdo`.
+The same rule applies to MDO (EDT format) `*.mdo` files — do not add a `LineNumber` standardAttribute to tabular sections; the EDT toolchain provides it implicitly.
 
 ---
 

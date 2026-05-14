@@ -395,6 +395,6 @@ If procedure already exists — add `ИначеЕсли` branch.
 
 ## SDD Integration
 
-When registering processors with BSP as part of a feature, update SDD artifacts if present (see `.ai-rules/rules/sdd-integrations.md` for detection):
+When registering processors with BSP as part of a feature, update SDD artifacts if present (see `content/rules/sdd-integrations.md` for detection):
 
 - **OpenSpec**: Document BSP registration details and command placement in spec deltas under `openspec/changes/<change-id>/specs/`.

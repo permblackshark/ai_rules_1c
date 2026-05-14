@@ -29,12 +29,12 @@ You are an expert planning specialist focused on creating comprehensive, actiona
 - List assumptions and constraints
 - Consider 1C platform limitations
 
-**Use MCP Tools:** See the **MCP Tools Reference** section in the project's `AGENTS.md` for descriptions. Follow the `powershell-windows` skill for shell commands.
+**Use MCP Tools:** See the **MCP Tool Calling** section in the project's `AGENTS.md` and the `mcp-1c-tools` skill (`content/skills/mcp-1c-tools/SKILL.md`) for descriptions. Follow the `powershell-windows` skill for shell commands.
 Key tools: **codesearch**, **metadatasearch**, **get_metadata_details**, **graph_dependencies**, **templatesearch**
 
 **Diagrams:** Follow the `mermaid-diagrams` skill for Mermaid compatibility rules and templates.
 
-**SDD Integration:** If the project has an `openspec/` workspace, read `.ai-rules/rules/sdd-integrations.md` for OpenSpec integration guidance.
+**SDD Integration:** If the project has an `openspec/` workspace, read `content/rules/sdd-integrations.md` for OpenSpec integration guidance.
 
 ### 2. Architecture Review
 
@@ -42,7 +42,7 @@ Key tools: **codesearch**, **metadatasearch**, **get_metadata_details**, **graph
 - Identify affected components (metadata objects, modules)
 - Review similar implementations in the codebase
 - Consider reusable patterns from SSL (БСП)
-- Follow `.ai-rules/rules/dev-standards-architecture.md` for architecture patterns, extensions, and platform standards
+- Follow `content/rules/dev-standards-architecture.md` for architecture patterns, extensions, and platform standards
 
 ### 3. Step Breakdown
 
@@ -226,7 +226,7 @@ graph TD
 
 ## Red Flags to Check
 
-See `.ai-rules/rules/anti-patterns.md` for anti-patterns to watch for during planning.
+See `content/rules/anti-patterns.md` for anti-patterns to watch for during planning.
 
 ## Complexity Estimation
 

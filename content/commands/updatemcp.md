@@ -1,55 +1,55 @@
 ---
-description: Обновить установленные MCP-серверы 1C из локального дистрибутива по приложенным к нему инструкциям
+description: Update installed 1C MCP servers from a local distribution according to its bundled instructions
 ---
 
-# /updatemcp — обновление MCP-серверов из дистрибутива
+# /updatemcp — update MCP servers from a distribution
 
-Команда обновляет уже установленные MCP-серверы для 1C, используя **локальный распакованный дистрибутив** (как правило — более свежий, чем тот, из которого серверы были установлены изначально). Все шаги обновления (новые версии образов, миграции томов, изменения переменных окружения, перезапуск контейнеров, переиндексация) описаны **внутри дистрибутива** — команда не выдумывает их и не подтягивает извне, а исполняет ровно то, что в нём написано.
+This command updates already installed 1C MCP servers using a **local unpacked distribution** (usually newer than the original installation source). All update steps (new image versions, volume migrations, environment variable changes, container restarts, reindexing) are described **inside the distribution**. Do not invent or fetch external instructions; execute exactly what the distribution says.
 
-Для первичной установки используй `/installmcp`. Для проверки текущего состояния — `/checkmcp`.
+Use `/installmcp` for first-time installation. Use `/checkmcp` to check current state.
 
-## Шаги
+## Steps
 
-### 1. Запросить путь к дистрибутиву
+### 1. Ask for the distribution path
 
-Спросить у пользователя один параметр:
+Ask the user for one parameter:
 
-> Укажите путь к каталогу с распакованным дистрибутивом MCP-серверов 1C для обновления (например, `D:\dist\mcp-1c`).
+> Provide the path to the unpacked 1C MCP server distribution directory for update (for example, `D:\dist\mcp-1c`).
 
-Если пользователь не дал путь — остановиться и попросить его. Не угадывать, не использовать «прошлый» путь по памяти, не предлагать `git pull` — дистрибутив должен лежать локально и уже быть распакован.
+If the user did not provide a path, stop and ask for it. Do not guess, do not reuse a "previous" path from memory, and do not suggest `git pull`; the distribution must already exist locally and be unpacked.
 
-### 2. Проверить каталог
+### 2. Check the directory
 
-После получения пути:
+After receiving the path:
 
-1. Убедиться, что каталог существует и доступен на чтение.
-2. Перечислить его содержимое (PowerShell):
+1. Make sure the directory exists and is readable.
+2. List its contents (PowerShell):
 
    ```powershell
    $dist = '<DIST_PATH>'
-   if (-not (Test-Path -LiteralPath $dist)) { throw "Каталог не найден: $dist" }
+   if (-not (Test-Path -LiteralPath $dist)) { throw "Directory not found: $dist" }
    Get-ChildItem -LiteralPath $dist -Force | Select-Object Mode, Name, Length | Format-Table -AutoSize
    ```
 
-3. Найти файл с инструкциями по обновлению. Кандидаты в порядке приоритета:
+3. Find the update instruction file. Candidates in priority order:
    - `UPDATE.md`, `update.md`
    - `UPGRADE.md`, `upgrade.md`
-   - `CHANGELOG.md` (если в нём описан порядок обновления)
-   - `README.md` (раздел про обновление)
+   - `CHANGELOG.md` if it describes the update procedure
+   - `README.md` update section
    - `docs/UPDATE.md`, `docs/UPGRADE.md`
-   - любой `.md` / `.txt` верхнего уровня, в названии которого есть `update` / `upgrade` / `migration`
+   - any top-level `.md` / `.txt` file whose name contains `update` / `upgrade` / `migration`
 
-   Если ничего не нашлось — остановиться и сообщить пользователю: «В каталоге `<DIST_PATH>` не найдено файла с инструкцией по обновлению (`UPDATE.md` / `UPGRADE.md` / `CHANGELOG.md`). Уточните путь или название файла.»
+   If nothing is found, stop and tell the user: "No update instruction file (`UPDATE.md` / `UPGRADE.md` / `CHANGELOG.md`) was found in `<DIST_PATH>`. Please clarify the path or file name."
 
-### 3. Прочитать инструкцию полностью
+### 3. Read the instruction fully
 
-Прочитать найденный файл целиком. Если в инструкции есть ссылки на другие локальные файлы дистрибутива (`./scripts/...`, `./migrations/...`, `./compose/docker-compose.yml`, `./env/...`) — открыть и эти файлы тоже, прежде чем что-либо запускать.
+Read the found file fully. If it links to other local distribution files (`./scripts/...`, `./migrations/...`, `./compose/docker-compose.yml`, `./env/...`), open those files too before running anything.
 
-Источник правды — **только файлы внутри `<DIST_PATH>`**. Не подменять их `/checkmcp`, внешней документацией или памятью о прошлой установке.
+The source of truth is **only files inside `<DIST_PATH>`**. Do not replace them with `/checkmcp`, external documentation, or memory of a previous installation.
 
-### 4. Снять состояние «до»
+### 4. Capture pre-update state
 
-Перед изменением чего-либо зафиксировать текущее состояние, чтобы было с чем сравнить и откуда откатиться:
+Before changing anything, record the current state so there is something to compare against and roll back from:
 
 ```powershell
 docker version --format '{{.Server.Version}}'
@@ -57,66 +57,66 @@ docker ps --all --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 docker images --format 'table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
 ```
 
-Сравнить вывод с тем, что упомянуто в инструкции обновления (имена контейнеров, образы, порты). Если контейнера, на который ссылается инструкция, в системе нет — это означает, что соответствующий сервер не был установлен; в этом случае **/updatemcp его не установит** (для установки есть `/installmcp`), а просто пометит как «пропущен» и пойдёт дальше.
+Compare the output with the update instruction (container names, images, ports). If a container referenced by the instruction is absent from the system, that server was not installed; in this case **/updatemcp will not install it** (use `/installmcp` for installation), and will mark it as skipped.
 
-Если в инструкции есть шаги «снять резервную копию томов / индексов перед обновлением» — выполнить их **до** обновления, а не после.
+If the instruction includes "back up volumes / indexes before update", do that **before** updating, not after.
 
-### 5. Спланировать обновление
+### 5. Plan update
 
-До запуска команд:
+Before running commands:
 
-1. Кратко (3–7 строк) пересказать пользователю, что именно будет сделано по инструкции дистрибутива: какие образы будут обновлены, какие контейнеры будут перезапущены, нужна ли переиндексация (и сколько она займёт), какие переменные окружения / тома / лицензионные ключи требуют ввода или изменения.
-2. Явно перечислить рискованные шаги: удаление томов, миграция БД, остановка контейнеров с активной индексацией, обязательное обновление лицензионного ключа.
-3. Перечислить все недостающие данные одним списком и **запросить их у пользователя одним сообщением**, не дёргая по одному.
-4. Дождаться явного подтверждения пользователя перед началом обновления.
+1. Briefly summarize for the user (3-7 lines) what exactly will be done according to the distribution instruction: which images will be updated, which containers will restart, whether reindexing is needed and how long it may take, and which environment variables / volumes / license keys require input or changes.
+2. Explicitly list risky steps: volume deletion, DB migration, stopping containers with active indexing, mandatory license key update.
+3. List all missing data once and **ask the user for it in one message**, not one item at a time.
+4. Wait for explicit user confirmation before starting the update.
 
-### 6. Выполнить обновление
+### 6. Execute update
 
-Выполнить шаги ровно в том порядке, в каком они описаны в инструкции дистрибутива. Правила:
+Execute steps exactly in the order described by the distribution instruction. Rules:
 
-- Команды запускать из корня проекта, если в инструкции явно не сказано иначе.
-- Если инструкция предлагает `docker compose pull && docker compose up -d` / готовый `update.ps1` внутри дистрибутива — использовать именно его, а не собирать команду из таблицы `/checkmcp` или из памяти.
-- Не запускать ни `docker pull`, ни `docker compose up`, ни `docker rm` / `docker volume rm` без подтверждения пользователя.
-- Каждую тяжёлую команду показать пользователю до запуска.
-- После каждого шага кратко отчитываться: что обновлено (образ → новый дайджест), что перезапущено (имя контейнера → статус `Up X seconds`), какие тома затронуты.
+- Run commands from the project root unless the instruction explicitly says otherwise.
+- If the instruction offers `docker compose pull && docker compose up -d` / a ready `update.ps1` inside the distribution, use that exact path instead of composing a command from the `/checkmcp` table or memory.
+- Do not run `docker pull`, `docker compose up`, `docker rm`, or `docker volume rm` without user confirmation.
+- Show each heavy command to the user before running it.
+- After each step, briefly report what was updated (image → new digest), what restarted (container name → `Up X seconds` status), and which volumes were touched.
 
-Если инструкция требует переиндексации (`1C-docs-mcp`, `1c-code-metadata-mcp`, `1c-graph-metadata-mcp`, `1c-ssl-mcp`) — предупредить пользователя, что переиндексация может занять десятки минут или часы, и показать команду для отслеживания (`docker logs -f <name>`).
+If the instruction requires reindexing (`1C-docs-mcp`, `1c-code-metadata-mcp`, `1c-graph-metadata-mcp`, `1c-ssl-mcp`), warn the user that reindexing may take tens of minutes or hours, and show the monitoring command (`docker logs -f <name>`).
 
-### 7. Сверить MCP-конфиг активного инструмента
+### 7. Reconcile the active tool MCP config
 
-После того как контейнеры перезапущены:
+After containers restart:
 
-1. Если в инструкции дистрибутива поменялись порты, имена сервисов или схема MCP-конфига — внести изменения в активный конфиг (`.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`). Если 1c-rules установлены — это можно сделать через `/update` (он перерендерит конфиг по адаптеру), но только если изменения совместимы с шаблоном `content/mcp-servers.json`. Иначе — править конфиг руками по инструкции дистрибутива.
-2. Попросить пользователя перезапустить клиент (Cursor / Claude Code / Codex / OpenCode / Kilo Code), чтобы он переинициализировал MCP-сессию.
+1. If the distribution instruction changed ports, service names, or MCP config schema, update the active config (`.cursor/mcp.json` / `.mcp.json` / `.opencode/opencode.json` / `.codex/config.toml`). If 1c-rules is installed, this can be done through `/update` (it re-renders the config by adapter), but only if the changes are compatible with `content/mcp-servers.json`. Otherwise edit the config manually according to the distribution instruction.
+2. Ask the user to restart the client (Cursor / Claude Code / Codex / OpenCode / Kilo Code) so it reinitializes the MCP session.
 
-### 8. Финальная проверка
+### 8. Final check
 
-После перезапуска клиента запустить `/checkmcp`. Все серверы, которые были обновлены, должны получить статус **TOOLS_OK** (или **HTTP_OK**, если идёт переиндексация). Если что-то осталось в **TOOLS_MISSING** / **HTTP_DOWN** — вернуться к шагам 3–6 и сверить выполненное с инструкцией дистрибутива.
+After the client restart, run `/checkmcp`. All updated servers should get **TOOLS_OK** (or **HTTP_OK** if reindexing is still running). If anything remains **TOOLS_MISSING** / **HTTP_DOWN**, return to Steps 3-6 and compare the executed steps with the distribution instruction.
 
-## Откат
+## Rollback
 
-Если обновление сломало рабочее состояние:
+If the update broke the working state:
 
-1. Найти в инструкции дистрибутива раздел про откат / `rollback` / `downgrade` — следовать ему.
-2. Если такого раздела нет — типовой рецепт:
-   - остановить и удалить новые контейнеры (`docker stop <name>` → `docker rm <name>`);
-   - запустить контейнеры со старым тегом образа из снимка `docker images`, который был сделан на шаге 4;
-   - восстановить тома из резервной копии, если она снималась.
-3. Сообщить пользователю, что откат выполнен и снова запустить `/checkmcp`.
+1. Find the rollback / `rollback` / `downgrade` section in the distribution instruction and follow it.
+2. If no such section exists, use the typical recipe:
+   - stop and remove new containers (`docker stop <name>` → `docker rm <name>`);
+   - start containers with the old image tag from the `docker images` snapshot captured in Step 4;
+   - restore volumes from backup if one was made.
+3. Tell the user that rollback is complete and run `/checkmcp` again.
 
-## Финальный отчёт
+## Final report
 
-Короткая сводка пользователю:
+Short user summary:
 
-- путь к использованному дистрибутиву;
-- какой файл инструкции был прочитан;
-- какие серверы реально обновлены (имя контейнера, порт, было → стало по образу/дайджесту);
-- какие серверы пропущены и почему (не установлены, нет `LICENSE_KEY`, нет выгрузки и т. п.);
-- следующие шаги, если переиндексация ещё идёт.
+- distribution path used;
+- instruction file that was read;
+- servers actually updated (container name, port, previous → current image/digest);
+- servers skipped and why (not installed, no `LICENSE_KEY`, no dump, etc.);
+- next steps if reindexing is still running.
 
-## Ограничения
+## Limits
 
-- Команда **не** заменяет инструкцию дистрибутива и не дополняет её «своими» шагами.
-- Команда **не** скачивает дистрибутив сама — пользователь скачивает и распаковывает его сам.
-- Команда **не** ставит серверы, которых ещё нет в системе — для этого есть `/installmcp`.
-- Команда **не** запускает `docker pull` / `docker compose up` / `docker volume rm` без подтверждения пользователя.
+- The command **does not replace** the distribution instruction and does not add its own steps.
+- The command **does not download** the distribution; the user downloads and unpacks it.
+- The command **does not install** servers that are not already in the system; use `/installmcp` for that.
+- The command **does not run** `docker pull` / `docker compose up` / `docker volume rm` without user confirmation.
