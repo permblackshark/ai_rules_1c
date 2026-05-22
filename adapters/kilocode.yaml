@@ -37,7 +37,7 @@ detection:
   - exists: ".kilocode/"
 
 rules:
-  copyTo: ".kilo/rules/{name}.md"
+  copyTo: ".kilo/rules-1c/{name}.md"
   frontmatter:
     keep: [description, alwaysApply]
     drop: [globs, category]
@@ -45,9 +45,8 @@ rules:
 agents:
   copyTo: ".kilo/agents/{name}.md"
   frontmatter:
-    keep: [name, description, tools, modelHint]
-    rename:
-      modelHint: model
+    keep: [name, description]
+    drop: [tools, modelHint]
     addIf:
       isSubagent: { mode: subagent }
       "!isSubagent": { mode: all }
